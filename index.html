@@ -1,0 +1,4035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inversiones JOJ Solution 2025 C.A. — Inventario</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- Firebase SDK v9 compat (funciona con file:// y http://) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<style>
+:root {
+  --brand-black: #1a1a1a;
+  --brand-black-2: #252525;
+  --brand-black-3: #333333;
+  --brand-orange: #e85a1a;
+  --brand-orange-hover: #d14d10;
+  --brand-orange-soft: #fff3ec;
+  --brand-bg: #f5f5f7;
+  --brand-border: #e4e4e8;
+  --brand-text: #2b2b2b;
+  --brand-text-soft: #6b6b6b;
+  --brand-success: #2d8a5c;
+  --brand-warning: #d97706;
+  --brand-danger: #c0392b;
+  --brand-info: #3b7ea1;
+}
+
+* { margin:0; padding:0; box-sizing:border-box;
+    font-family:'Segoe UI',Tahoma,sans-serif; }
+body { background:var(--brand-bg); color:var(--brand-text);
+       font-size:14px; line-height:1.5; }
+
+#loginScreen {
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg, #1a1a1a 0%, #2b2b2b 100%);
+  z-index:3000; padding:15px;
+}
+.login-box {
+  background:white; padding:40px 35px; border-radius:16px; width:100%; max-width:420px;
+  box-shadow:0 25px 70px rgba(0,0,0,0.5);
+  text-align:center; border-top:5px solid var(--brand-orange);
+}
+.login-logo {
+  width:150px; height:150px; object-fit:contain; margin-bottom:15px;
+  filter: drop-shadow(0 4px 12px rgba(232,90,26,0.25));
+}
+.login-logo-fallback {
+  width:110px; height:110px; border-radius:50%;
+  background:linear-gradient(135deg, #1a1a1a, #333);
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:3rem; color:var(--brand-orange); margin-bottom:15px;
+  border:3px solid var(--brand-orange);
+}
+.login-box h1 { font-size:1.3rem; color:var(--brand-black); margin-bottom:5px;
+                letter-spacing:0.5px; line-height:1.3; }
+.login-box .sub { color:var(--brand-text-soft); font-size:0.85rem;
+                  margin-bottom:20px; }
+.login-box input {
+  width:100%; padding:12px 14px; border:2px solid var(--brand-border);
+  border-radius:8px; margin-bottom:12px; font-size:0.95rem; transition:all .3s;
+  background:#fafafb;
+}
+.login-box input:focus { outline:none; border-color:var(--brand-orange);
+                         background:white; }
+.login-box button {
+  width:100%; padding:13px; background:var(--brand-orange); color:white;
+  border:none; border-radius:8px; font-size:1rem; font-weight:600;
+  cursor:pointer; transition:all .25s;
+}
+.login-box button:hover { background:var(--brand-orange-hover);
+                          transform:translateY(-2px);
+                          box-shadow:0 10px 25px rgba(232,90,26,0.3); }
+.login-msg { margin-top:12px; font-size:0.85rem; min-height:20px; }
+.login-msg.error { color:var(--brand-danger); }
+.login-msg.success { color:var(--brand-success); }
+
+#appScreen { display:none; min-height:100vh; flex-direction:column; }
+header.topbar {
+  background:linear-gradient(135deg, #1a1a1a 0%, #2b2b2b 100%);
+  color:white; padding:10px 18px;
+  display:flex; justify-content:space-between; align-items:center;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 3px 12px rgba(0,0,0,0.2);
+  flex-wrap:wrap; gap:10px; border-bottom:3px solid var(--brand-orange);
+}
+header.topbar .brand {
+  display:flex; align-items:center; gap:12px;
+}
+header.topbar .brand img {
+  width:42px; height:42px; object-fit:contain;
+}
+header.topbar .brand .brand-icon {
+  width:42px; height:42px; border-radius:50%;
+  background:var(--brand-orange);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.3rem; color:white;
+}
+header.topbar .brand h1 {
+  font-size:1rem; letter-spacing:0.5px; line-height:1.2;
+}
+header.topbar .brand h1 small {
+  display:block; font-size:0.68rem; color:#b8b8b8;
+  font-weight:400; letter-spacing:1.5px; margin-top:2px;
+}
+header.topbar .user-info {
+  display:flex; align-items:center; gap:12px;
+  font-size:0.82rem; flex-wrap:wrap;
+}
+header.topbar .user-info .tasa-badge {
+  background:rgba(232,90,26,0.15);
+  border:1px solid rgba(232,90,26,0.4);
+  padding:5px 11px; border-radius:20px;
+  color:#ffb48a;
+}
+header.topbar .user-info button {
+  background:rgba(255,255,255,0.08); color:white;
+  border:1px solid rgba(255,255,255,0.15);
+  padding:6px 12px; border-radius:6px; cursor:pointer;
+  font-size:0.78rem; transition:all .2s;
+}
+header.topbar .user-info button:hover {
+  background:var(--brand-orange); border-color:var(--brand-orange);
+}
+
+.main-wrap { display:flex; flex:1; min-height:calc(100vh - 60px); }
+.sidebar {
+  width:230px; background:#202020; color:#d8d8d8; padding:15px 0;
+  display:flex; flex-direction:column; gap:3px; overflow-y:auto;
+}
+.sidebar .nav-item {
+  padding:11px 18px; cursor:pointer; display:flex; align-items:center; gap:10px;
+  font-size:0.87rem; transition:all .2s;
+  border-left:3px solid transparent;
+}
+.sidebar .nav-item:hover { background:#2b2b2b; color:white; }
+.sidebar .nav-item.active {
+  background:#2b2b2b; border-left-color:var(--brand-orange); color:white;
+}
+.sidebar .nav-group {
+  padding:15px 18px 5px; font-size:0.68rem; text-transform:uppercase;
+  color:#6a6a6a; letter-spacing:1.2px;
+}
+.sidebar .nav-item i { width:20px; text-align:center; }
+
+.content { flex:1; padding:20px; overflow-y:auto; }
+.section { display:none; }
+.section.active { display:block; animation:fade .3s; }
+@keyframes fade { from{opacity:0;} to{opacity:1;} }
+
+h2.page-title {
+  font-size:1.4rem; color:var(--brand-black); margin-bottom:18px;
+  display:flex; align-items:center; gap:10px;
+}
+h2.page-title i { color:var(--brand-orange); }
+
+.cards-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:14px; margin-bottom:20px;
+}
+.stat-card {
+  background:white; border-radius:10px; padding:18px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  border-left:4px solid var(--brand-orange);
+  transition:transform .2s;
+}
+.stat-card:hover { transform:translateY(-2px); }
+.stat-card.green { border-left-color:var(--brand-success); }
+.stat-card.orange { border-left-color:var(--brand-warning); }
+.stat-card.red { border-left-color:var(--brand-danger); }
+.stat-card.purple { border-left-color:#7b5ea7; }
+.stat-card.blue { border-left-color:var(--brand-info); }
+.stat-card .label {
+  font-size:0.75rem; color:var(--brand-text-soft);
+  text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;
+}
+.stat-card .value { font-size:1.65rem; font-weight:700; color:var(--brand-black); }
+.stat-card .sub { font-size:0.78rem; color:#999; margin-top:3px; }
+
+.table-wrap {
+  background:white; border-radius:10px; overflow:auto;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05); max-height:600px;
+  -webkit-overflow-scrolling:touch;
+}
+table { width:100%; border-collapse:collapse; min-width:800px; }
+thead {
+  background:#2b2b2b; color:white; position:sticky; top:0; z-index:5;
+}
+th,td {
+  padding:10px 12px; text-align:left;
+  border-bottom:1px solid #eee; font-size:0.85rem;
+}
+tbody tr:hover { background:#fafafb; }
+tfoot { background:#f5f5f7; font-weight:bold; }
+
+.form-row { display:flex; gap:15px; margin-bottom:14px; flex-wrap:wrap; }
+.form-group { flex:1; min-width:180px; }
+.form-group.full { flex:100%; }
+label {
+  display:block; font-size:0.82rem; font-weight:600;
+  color:var(--brand-black); margin-bottom:5px;
+}
+input,select,textarea {
+  width:100%; padding:9px 11px; border:1.5px solid var(--brand-border);
+  border-radius:7px; font-size:0.88rem; transition:all .2s; background:white;
+}
+input:focus,select:focus,textarea:focus {
+  outline:none; border-color:var(--brand-orange);
+  box-shadow:0 0 0 3px rgba(232,90,26,0.12);
+}
+input[readonly] { background:#f5f5f7; cursor:not-allowed; }
+
+.btn {
+  padding:10px 18px; border:none; border-radius:7px; cursor:pointer;
+  font-weight:600; display:inline-flex; align-items:center; gap:7px;
+  font-size:0.85rem; transition:all .2s;
+}
+.btn:hover { transform:translateY(-1px);
+             box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.btn-primary { background:var(--brand-orange); color:white; }
+.btn-primary:hover { background:var(--brand-orange-hover); }
+.btn-success { background:var(--brand-success); color:white; }
+.btn-danger { background:var(--brand-danger); color:white; }
+.btn-warning { background:var(--brand-warning); color:white; }
+.btn-secondary { background:#5a5a5a; color:white; }
+.btn-dark { background:var(--brand-black); color:white; }
+.btn-sm { padding:6px 11px; font-size:0.78rem; }
+
+.modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.6); z-index:2000;
+  justify-content:center; align-items:center; padding:15px;
+  overflow-y:auto;
+}
+.modal.show { display:flex; }
+.modal-box {
+  background:white; border-radius:12px; width:100%; max-width:560px;
+  max-height:92vh; overflow-y:auto;
+  box-shadow:0 25px 60px rgba(0,0,0,0.35);
+  margin:auto;
+}
+.modal-box.wide { max-width:900px; }
+.modal-head {
+  background:linear-gradient(135deg, #1a1a1a, #2b2b2b); color:white;
+  padding:15px 20px; border-radius:12px 12px 0 0;
+  display:flex; justify-content:space-between; align-items:center;
+  border-bottom:3px solid var(--brand-orange);
+}
+.modal-head h3 { font-size:1.05rem; display:flex; align-items:center; gap:8px; }
+.modal-head h3 i { color:var(--brand-orange); }
+.modal-head .close-x { cursor:pointer; font-size:1.4rem; line-height:1; }
+.modal-body { padding:20px; }
+.modal-foot {
+  padding:15px 20px; display:flex; justify-content:flex-end;
+  gap:10px; border-top:1px solid #eee; flex-wrap:wrap;
+}
+
+.toast {
+  position:fixed; top:75px; right:20px; padding:13px 20px;
+  border-radius:9px; color:white; font-size:0.88rem; z-index:5000;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  animation:slideIn .3s ease; max-width:340px;
+}
+.toast.success { background:var(--brand-success); }
+.toast.error { background:var(--brand-danger); }
+.toast.warning { background:var(--brand-warning); }
+.toast.info { background:var(--brand-info); }
+@keyframes slideIn {
+  from{transform:translateX(120%);opacity:0;} to{transform:translateX(0);opacity:1;}
+}
+
+.alert-item {
+  background:white; border-left:4px solid var(--brand-danger);
+  padding:11px 15px; border-radius:6px; margin-bottom:8px;
+  display:flex; justify-content:space-between; align-items:center;
+  box-shadow:0 1px 4px rgba(0,0,0,0.05); font-size:0.85rem;
+  gap:10px; flex-wrap:wrap;
+}
+.alert-item.warn { border-left-color:var(--brand-warning); }
+.alert-item .qty { font-weight:700; color:var(--brand-danger); }
+.alert-item.warn .qty { color:var(--brand-warning); }
+
+.badge {
+  display:inline-block; padding:3px 9px; border-radius:11px;
+  font-size:0.72rem; font-weight:600;
+}
+.badge-green { background:#e3f4ec; color:var(--brand-success); }
+.badge-red { background:#fbe4e0; color:var(--brand-danger); }
+.badge-orange { background:#fdeddc; color:var(--brand-warning); }
+.badge-blue { background:#e0eef5; color:var(--brand-info); }
+.badge-gray { background:#eaeaea; color:#5d5d5d; }
+.badge-purple { background:#ece4f5; color:#7b5ea7; }
+
+.filters-bar {
+  background:white; padding:14px; border-radius:10px; margin-bottom:16px;
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+.filters-bar input, .filters-bar select {
+  min-width:140px; flex:1;
+}
+
+.loader {
+  display:none; position:fixed; inset:0;
+  background:rgba(255,255,255,0.9);
+  z-index:4000; justify-content:center; align-items:center;
+  flex-direction:column; gap:15px;
+}
+.loader.show { display:flex; }
+.spinner {
+  width:50px; height:50px; border:5px solid #eee;
+  border-top-color:var(--brand-orange); border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg);} }
+.loader-text { color:var(--brand-black); font-weight:600; font-size:0.9rem; }
+
+.info-box {
+  background:#eef4f8; border-left:4px solid var(--brand-info);
+  padding:12px 15px; border-radius:7px; margin-bottom:15px; font-size:0.85rem;
+}
+.warn-box {
+  background:#fdf4e3; border-left:4px solid var(--brand-warning);
+  padding:12px 15px; border-radius:7px; margin-bottom:15px; font-size:0.85rem;
+}
+.success-box {
+  background:#eaf7ef; border-left:4px solid var(--brand-success);
+  padding:12px 15px; border-radius:7px; margin-bottom:15px; font-size:0.85rem;
+}
+.empty-state {
+  text-align:center; padding:40px 20px; color:#999;
+}
+.empty-state i { font-size:3rem; margin-bottom:12px; display:block;
+                 color:#ccc; }
+
+.hidden { display:none !important; }
+.badge-local {
+  background:#fff3ec; color:var(--brand-orange);
+  padding:3px 10px; border-radius:10px;
+  font-size:0.7rem; font-weight:600; margin-left:8px;
+  border:1px solid rgba(232,90,26,0.3);
+}
+.qty-input { width:80px; padding:6px; text-align:center; }
+.iva-row {
+  display:flex; justify-content:space-between; padding:6px 0;
+  border-bottom:1px dashed #eee;
+}
+.iva-row.total {
+  font-size:1.15rem; font-weight:700; color:var(--brand-black);
+  border-bottom:none; margin-top:8px; padding-top:10px;
+  border-top:2px solid var(--brand-orange);
+}
+.preview-table {
+  max-height:350px; overflow-y:auto; border:1px solid var(--brand-border);
+  border-radius:7px;
+}
+.preview-table table { min-width:auto; font-size:0.8rem; }
+.preview-table th, .preview-table td { padding:6px 8px; }
+.flex-split { display:grid; grid-template-columns:1fr 380px; gap:20px; }
+
+@media(max-width:1024px){
+  .flex-split { grid-template-columns:1fr; }
+}
+
+@media(max-width:768px){
+  header.topbar { padding:10px 12px; }
+  header.topbar .brand h1 { font-size:0.9rem; }
+  header.topbar .brand h1 small { font-size:0.6rem; }
+  header.topbar .brand img, header.topbar .brand .brand-icon {
+    width:36px; height:36px; font-size:1.1rem;
+  }
+  header.topbar .user-info { font-size:0.75rem; gap:8px; width:100%;
+                             justify-content:flex-start; }
+  header.topbar .user-info button { padding:5px 10px; font-size:0.72rem; }
+
+  .main-wrap { flex-direction:column; }
+  .sidebar {
+    width:100%; flex-direction:row; overflow-x:auto;
+    padding:8px; gap:5px; border-bottom:3px solid var(--brand-orange);
+  }
+  .sidebar .nav-item {
+    padding:9px 12px; font-size:0.78rem; white-space:nowrap;
+    border-left:none; border-bottom:3px solid transparent;
+    border-radius:6px;
+  }
+  .sidebar .nav-item span { display:inline; }
+  .sidebar .nav-item.active {
+    border-left:none; border-bottom-color:var(--brand-orange);
+    background:#2b2b2b;
+  }
+  .sidebar .nav-group { display:none; }
+
+  .content { padding:12px; }
+  h2.page-title { font-size:1.15rem; margin-bottom:14px; }
+  .cards-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-card { padding:13px; }
+  .stat-card .value { font-size:1.3rem; }
+  .stat-card .label { font-size:0.68rem; }
+
+  th,td { padding:8px 9px; font-size:0.78rem; }
+  .btn { padding:9px 14px; font-size:0.8rem; }
+  .btn-sm { padding:5px 9px; font-size:0.72rem; }
+
+  .modal-body { padding:15px; }
+  .modal-foot { padding:12px 15px; }
+  .form-group { min-width:100%; }
+
+  .toast { right:10px; left:10px; max-width:none; top:65px;
+           font-size:0.82rem; padding:11px 15px; }
+}
+
+@media(max-width:480px){
+  .cards-grid { grid-template-columns:1fr; }
+  header.topbar .brand h1 small { display:none; }
+  .login-box { padding:30px 22px; }
+  .login-logo { width:110px; height:110px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <img src="logo.png" alt="Logo" class="login-logo"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+    <div class="login-logo-fallback" style="display:none;">
+      <i class="fas fa-motorcycle"></i>
+    </div>
+    <h1>INVERSIONES JOJ SOLUTION 2025 C.A.</h1>
+    <p class="sub">Sistema de Inventario y Ventas</p>
+    <p class="sub"><span class="badge-local"><i class="fas fa-cloud"></i> Conectado a la nube</span></p>
+    <input type="text" id="loginUser" placeholder="Usuario" autocomplete="off">
+    <input type="password" id="loginPass" placeholder="Contraseña"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
+    <div id="loginMsg" class="login-msg"></div>
+    <div style="margin-top:20px;font-size:0.75rem;color:#999;">
+      Primera vez: usuario <strong>admin</strong> / contraseña <strong>Admin4321</strong>
+    </div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.png" alt="Logo"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="brand-icon" style="display:none;"><i class="fas fa-motorcycle"></i></div>
+      <h1>INVERSIONES JOJ SOLUTION 2025 C.A.<small>SISTEMA DE INVENTARIO</small></h1>
+    </div>
+    <div class="user-info">
+      <span class="tasa-badge"><i class="fas fa-dollar-sign"></i> Tasa: <strong id="topTasa">--</strong> Bs/$</span>
+      <span><i class="fas fa-user-circle"></i> <strong id="topUser">--</strong>
+            <span id="topRol" class="badge badge-blue">--</span></span>
+      <button onclick="openMiPerfil()"><i class="fas fa-user-cog"></i> Perfil</button>
+      <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
+    </div>
+  </header>
+  <div class="main-wrap">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content" id="mainContent"></main>
+  </div>
+</div>
+
+<div class="modal" id="modalUsuario">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalUsuarioTitle">Nuevo Usuario</h3>
+      <span class="close-x" onclick="closeModal('modalUsuario')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Usuario *</label>
+          <input type="text" id="uUsuario" placeholder="Ej: josmary">
+        </div>
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="uNombre" placeholder="Ej: Josmary Pérez">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rol *</label>
+          <select id="uRol">
+            <option value="vendedor">Vendedor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="uActivo">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contraseña *</label>
+          <input type="password" id="uPass" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Confirmar contraseña *</label>
+          <input type="password" id="uPass2" placeholder="Repita la contraseña">
+        </div>
+      </div>
+      <div id="uMsg" class="login-msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUsuario()">
+        <i class="fas fa-save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalMiPerfil">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fas fa-user-cog"></i> Mi Perfil</h3>
+      <span class="close-x" onclick="closeModal('modalMiPerfil')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">
+        <strong>Usuario:</strong> <span id="perfilUser">--</span><br>
+        <strong>Nombre:</strong> <span id="perfilNombre">--</span><br>
+        <strong>Rol:</strong> <span id="perfilRol">--</span>
+      </div>
+      <h3 style="margin:15px 0 10px;font-size:1rem;">Cambiar Contraseña</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Contraseña actual *</label>
+        <input type="password" id="perfilPassOld">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Nueva contraseña *</label>
+        <input type="password" id="perfilPassNew" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Confirmar nueva *</label>
+        <input type="password" id="perfilPassNew2">
+      </div>
+      <div id="perfilMsg" class="login-msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalMiPerfil')">Cancelar</button>
+      <button class="btn btn-primary" onclick="cambiarMiPass()">
+        <i class="fas fa-key"></i> Actualizar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalConfirm">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-head">
+      <h3><i class="fas fa-exclamation-triangle"></i> Confirmar</h3>
+      <span class="close-x" onclick="closeModal('modalConfirm')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p id="confirmText">¿Está seguro?</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalConfirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalProducto">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalProductoTitle">Producto</h3>
+      <span class="close-x" onclick="closeModal('modalProducto')">&times;</span>
+    </div>
+    <div class="modal-body" id="modalProductoBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="modalImportar">
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <h3><i class="fas fa-file-import"></i> Importar Inventario</h3>
+      <span class="close-x" onclick="closeModal('modalImportar')">&times;</span>
+    </div>
+    <div class="modal-body" id="modalImportarBody"></div>
+  </div>
+</div>
+
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text" id="loaderText">Cargando...</div>
+</div>
+
+<script>
+/* ================================================================
+   INVERSIONES JOJ SOLUTION 2025 C.A.
+   Sistema de Inventario y Ventas
+   BLOQUE 1: Núcleo + Login + Usuarios + Dashboard + Inventario
+   + Importar Excel/PDF + Movimientos + Configuración
+   + Firebase (sincronización en tiempo real)
+   ================================================================ */
+
+const STORAGE_KEY = 'jojInventario_v1';
+
+const STATE = {
+  user: null,
+  usuarios: [],
+  productos: [],
+  movimientos: [],
+  ventas: [],
+  devoluciones: [],
+  clientes: [],
+  compras: [],
+  tasas: [],
+  config: {
+    tasaBCV: 36.50,
+    margenDefault: 40,
+    iva: 16,
+    stockMinDefault: 3,
+    empresa: 'INVERSIONES JOJ SOLUTION 2025 C.A.',
+    rif: 'J-509112580',
+    telefono: '',
+    direccion: ''
+  }
+};
+
+/* ================================================================
+   FIREBASE — Configuración del proyecto JOJ
+   ================================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBWdvgW2zfAL5tksV7gDdI3LABHrBitJxo",
+  authDomain: "sistema-de-inventario-joj-2025.firebaseapp.com",
+  projectId: "sistema-de-inventario-joj-2025",
+  storageBucket: "sistema-de-inventario-joj-2025.firebasestorage.app",
+  messagingSenderId: "817912347081",
+  appId: "1:817912347081:web:2175d635862aba8bf0d018",
+  measurementId: "G-9T7XQN8234"
+};
+
+const FIRESTORE_DOC_PATH = { coleccion: 'sistema', documento: 'datos' };
+
+let FB = {
+  app: null,
+  db: null,
+  activo: false,
+  unsubscribe: null,
+  ultimaSync: null,
+  guardando: false
+};
+
+function initFirebase(){
+  try {
+    if(!window.firebase){
+      console.warn('Firebase SDK no cargado');
+      return false;
+    }
+    FB.app = firebase.initializeApp(FIREBASE_CONFIG);
+    FB.db = firebase.firestore();
+    FB.activo = true;
+    console.log('Firebase conectado:', FIREBASE_CONFIG.projectId);
+    return true;
+  } catch(e){
+    console.error('Error al inicializar Firebase:', e);
+    FB.activo = false;
+    return false;
+  }
+}
+
+function empaquetarDatos(){
+  return {
+    usuarios: STATE.usuarios,
+    productos: STATE.productos,
+    movimientos: STATE.movimientos,
+    ventas: STATE.ventas,
+    devoluciones: STATE.devoluciones,
+    clientes: STATE.clientes,
+    compras: STATE.compras,
+    tasas: STATE.tasas,
+    config: STATE.config,
+    _savedAt: new Date().toISOString(),
+    _savedBy: STATE.user?.usuario || 'sistema'
+  };
+}
+
+function desempacarDatos(d){
+  if(!d) return;
+  STATE.usuarios = d.usuarios || [];
+  STATE.productos = d.productos || [];
+  STATE.movimientos = d.movimientos || [];
+  STATE.ventas = d.ventas || [];
+  STATE.devoluciones = d.devoluciones || [];
+  STATE.clientes = d.clientes || [];
+  STATE.compras = d.compras || [];
+  STATE.tasas = d.tasas || [];
+  STATE.config = {...STATE.config, ...(d.config||{})};
+}
+
+async function guardarTodo(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(empaquetarDatos()));
+  } catch(e){ console.error('guardarTodo localStorage:', e); }
+
+  if(!FB.activo || !FB.db || FB.guardando) return;
+  FB.guardando = true;
+  try {
+    const ref = FB.db.collection(FIRESTORE_DOC_PATH.coleccion)
+      .doc(FIRESTORE_DOC_PATH.documento);
+    await ref.set(empaquetarDatos(), { merge: false });
+    FB.ultimaSync = new Date();
+    updateSyncIndicator('ok');
+  } catch(e){
+    console.error('guardarTodo Firestore:', e);
+    updateSyncIndicator('error');
+  } finally {
+    FB.guardando = false;
+  }
+}
+
+async function cargarTodo(){
+  if(FB.activo && FB.db){
+    try {
+      const ref = FB.db.collection(FIRESTORE_DOC_PATH.coleccion)
+        .doc(FIRESTORE_DOC_PATH.documento);
+      const snap = await ref.get();
+      if(snap.exists){
+        const d = snap.data();
+        if(d && (d.productos?.length > 0 || d.usuarios?.length > 0)){
+          desempacarDatos(d);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+          FB.ultimaSync = new Date();
+          console.log('Datos cargados desde Firestore:', {
+            productos: STATE.productos.length,
+            ventas: STATE.ventas.length,
+            usuarios: STATE.usuarios.length
+          });
+          updateSyncIndicator('ok');
+          return true;
+        }
+      }
+      console.log('Firestore vacio. Se usara localStorage como base inicial.');
+    } catch(e){
+      console.error('cargarTodo Firestore:', e);
+      updateSyncIndicator('error');
+    }
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    desempacarDatos(d);
+    console.log('Datos cargados desde localStorage');
+    return true;
+  } catch(e){
+    console.error('cargarTodo localStorage:', e);
+    return false;
+  }
+}
+
+function iniciarSyncTiempoReal(){
+  if(!FB.activo || !FB.db) return;
+  if(FB.unsubscribe) FB.unsubscribe();
+
+  const ref = FB.db.collection(FIRESTORE_DOC_PATH.coleccion)
+    .doc(FIRESTORE_DOC_PATH.documento);
+
+  FB.unsubscribe = ref.onSnapshot(snap => {
+    if(!snap.exists) return;
+    const d = snap.data();
+    if(!d) return;
+
+    const savedBy = d._savedBy;
+    const savedAt = d._savedAt ? new Date(d._savedAt).getTime() : 0;
+    const esMioReciente = (savedBy === STATE.user?.usuario) &&
+                          (Date.now() - savedAt < 3000);
+    if(esMioReciente) return;
+
+    desempacarDatos(d);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    FB.ultimaSync = new Date();
+    updateSyncIndicator('ok');
+
+    if(STATE.user && STATE.ready){
+      const activa = document.querySelector('.nav-item.active')?.dataset.sec;
+      if(activa) renderSection(activa);
+      const tt = document.getElementById('topTasa');
+      if(tt) tt.textContent = parseFloat(STATE.config.tasaBCV).toFixed(2);
+    }
+    console.log('Cambios recibidos de Firestore (otra PC)');
+  }, err => {
+    console.error('Listener Firestore:', err);
+    updateSyncIndicator('error');
+  });
+}
+
+function updateSyncIndicator(estado){
+  let el = document.getElementById('syncIndicator');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'syncIndicator';
+    el.style.cssText = `
+      position:fixed; bottom:15px; right:15px; z-index:9999;
+      background:#2d8a5c; color:white; padding:8px 14px;
+      border-radius:20px; font-size:0.75rem; font-weight:600;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+      display:flex; align-items:center; gap:6px;
+      transition:all 0.3s; cursor:pointer;
+    `;
+    el.title = 'Click para sincronizacion manual';
+    el.onclick = () => {
+      if(confirm('Forzar sincronizacion con la nube ahora?')){
+        guardarTodo().then(() => {
+          cargarTodo().then(() => {
+            toast('Sincronizacion completada', 'success');
+            const activa = document.querySelector('.nav-item.active')?.dataset.sec;
+            if(activa) renderSection(activa);
+          });
+        });
+      }
+    };
+    document.body.appendChild(el);
+  }
+
+  const iconos = {
+    ok: 'Nube OK',
+    guardando: 'Guardando',
+    error: 'Sin conexion',
+    offline: 'Local'
+  };
+  el.innerHTML = '<i class="fas fa-cloud"></i> ' + (iconos[estado] || iconos.offline);
+  el.style.background = estado === 'ok' ? '#2d8a5c' :
+                        estado === 'error' ? '#c0392b' :
+                        estado === 'guardando' ? '#d97706' : '#5a5a5a';
+}
+
+async function forzarSincronizacion(){
+  showLoader(true, 'Sincronizando con la nube...');
+  try {
+    await guardarTodo();
+    await cargarTodo();
+    const activa = document.querySelector('.nav-item.active')?.dataset.sec;
+    if(activa) renderSection(activa);
+    toast('Sincronizacion completada', 'success');
+    updateSyncIndicator('ok');
+  } catch(e){
+    toast('Error al sincronizar: ' + e.message, 'error');
+    updateSyncIndicator('error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+/* ================================================================
+   UTILIDADES GENERALES
+   ================================================================ */
+
+function uid(p){ return (p||'id') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+
+function hashSimple(txt){
+  let h = 0;
+  for(let i=0; i<txt.length; i++){
+    h = ((h << 5) - h) + txt.charCodeAt(i);
+    h = h & h;
+  }
+  return 'h_' + Math.abs(h).toString(36);
+}
+
+function toast(msg, tipo='info'){
+  const t = document.createElement('div');
+  t.className = `toast ${tipo}`;
+  const icon = { success:'fa-check-circle', error:'fa-exclamation-circle',
+                 warning:'fa-triangle-exclamation', info:'fa-info-circle' }[tipo];
+  t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+function showLoader(b, txt){
+  const el = document.getElementById('loader');
+  if(b){
+    document.getElementById('loaderText').textContent = txt || 'Cargando...';
+    el.classList.add('show');
+  } else el.classList.remove('show');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+
+function fmtUSD(n){ return '$' + (parseFloat(n)||0).toFixed(2); }
+function fmtBs(n){ return 'Bs ' + (parseFloat(n)||0).toLocaleString('es-VE',
+  {minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtNum(n){ return (parseFloat(n)||0).toLocaleString('es-VE'); }
+function fmtFecha(iso){
+  if(!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit'});
+}
+function fmtFechaCorta(iso){
+  if(!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function hoyISO(){ return new Date().toISOString(); }
+function hoyFecha(){ return new Date().toISOString().split('T')[0]; }
+
+function bootstrapAdmin(){
+  if(!STATE.usuarios.some(u => u.usuario === 'admin')){
+    STATE.usuarios.push({
+      id: uid('usr'),
+      usuario: 'admin',
+      nombre: 'Administrador Principal',
+      rol: 'admin',
+      activo: true,
+      passwordHash: hashSimple('Admin4321'),
+      createdAt: hoyISO(),
+      createdBy: 'sistema',
+      lastLogin: null
+    });
+    guardarTodo();
+    console.log('Admin creado (admin / Admin4321)');
+  }
+}
+
+function doLogin(){
+  const usuario = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const msg = document.getElementById('loginMsg');
+  msg.className = 'login-msg'; msg.textContent = '';
+
+  if(!usuario || !pass){ msg.className='login-msg error';
+    msg.textContent='Complete usuario y contraseña'; return; }
+
+  const u = STATE.usuarios.find(x => x.usuario === usuario);
+  if(!u){ msg.className='login-msg error'; msg.textContent='Usuario no encontrado'; return; }
+  if(!u.activo){ msg.className='login-msg error';
+    msg.textContent='Usuario desactivado'; return; }
+  if(hashSimple(pass) !== u.passwordHash){
+    msg.className='login-msg error'; msg.textContent='Contraseña incorrecta'; return; }
+
+  u.lastLogin = hoyISO();
+  guardarTodo();
+  STATE.user = { id:u.id, usuario:u.usuario, nombre:u.nombre, rol:u.rol };
+  sessionStorage.setItem('joj_user', JSON.stringify(STATE.user));
+  msg.className='login-msg success'; msg.textContent='¡Bienvenido!';
+  setTimeout(enterApp, 200);
+}
+
+function logout(){
+  sessionStorage.removeItem('joj_user');
+  STATE.user = null;
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginMsg').textContent = '';
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'flex';
+  document.getElementById('topUser').textContent = STATE.user.nombre;
+  document.getElementById('topRol').textContent = STATE.user.rol.toUpperCase();
+  document.getElementById('topTasa').textContent =
+    parseFloat(STATE.config.tasaBCV).toFixed(2);
+  buildSidebar();
+  renderSection('dashboard');
+}
+
+function buildSidebar(){
+  const esAdmin = STATE.user.rol === 'admin';
+  const items = [
+    { g:'Principal' },
+    { id:'dashboard', ico:'fa-gauge-high', txt:'Dashboard' },
+    { id:'inventario', ico:'fa-boxes-stacked', txt:'Inventario' },
+    { id:'importar', ico:'fa-file-import', txt:'Importar' },
+    { g:'Operaciones' },
+    { id:'ventas', ico:'fa-cash-register', txt:'Ventas' },
+    { id:'devoluciones', ico:'fa-rotate-left', txt:'Devoluciones' },
+    { id:'clientes', ico:'fa-users', txt:'Clientes' },
+    { g:'Administración' },
+    { id:'compras', ico:'fa-truck', txt:'Compras' },
+    { id:'movimientos', ico:'fa-right-left', txt:'Movimientos' },
+    { id:'reportes', ico:'fa-chart-line', txt:'Reportes' },
+    ...(esAdmin ? [
+      { g:'Sistema' },
+      { id:'usuarios', ico:'fa-user-shield', txt:'Usuarios' },
+      { id:'configuracion', ico:'fa-gear', txt:'Configuración' }
+    ] : [])
+  ];
+  const html = items.map(it => it.g
+    ? `<div class="nav-group">${it.g}</div>`
+    : `<div class="nav-item" data-sec="${it.id}" onclick="renderSection('${it.id}')">
+         <i class="fas ${it.ico}"></i><span>${it.txt}</span></div>`
+  ).join('');
+  document.getElementById('sidebar').innerHTML = html;
+}
+
+function renderSection(sec){
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.classList.toggle('active', n.dataset.sec === sec));
+  const main = document.getElementById('mainContent');
+  const fn = {
+    dashboard: renderDashboard,
+    inventario: renderInventario,
+    importar: renderImportar,
+    ventas: renderVentas,
+    devoluciones: renderDevoluciones,
+    clientes: renderClientes,
+    compras: renderCompras,
+    movimientos: renderMovimientos,
+    reportes: renderReportes,
+    usuarios: renderUsuarios,
+    configuracion: renderConfiguracion
+  }[sec];
+  if(fn) fn(main);
+}
+
+function renderDashboard(main){
+  const totalProductos = STATE.productos.length;
+  const stockBajo = STATE.productos.filter(p =>
+    (parseFloat(p.stock)||0) <= (parseFloat(p.stockMinimo)||3)).length;
+  const agotados = STATE.productos.filter(p =>
+    (parseFloat(p.stock)||0) === 0).length;
+
+  const hoy = hoyFecha();
+  const ventasHoy = STATE.ventas.filter(v => v.fechaHora && v.fechaHora.startsWith(hoy));
+  const totalHoyUSD = ventasHoy.reduce((s,v) => s + (parseFloat(v.totalUSD)||0), 0);
+  const totalHoyBs = ventasHoy.reduce((s,v) => s + (parseFloat(v.totalBs)||0), 0);
+
+  const mes = new Date().getMonth(), anio = new Date().getFullYear();
+  const ventasMes = STATE.ventas.filter(v => {
+    if(!v.fechaHora) return false;
+    const d = new Date(v.fechaHora);
+    return d.getMonth() === mes && d.getFullYear() === anio;
+  });
+  const conteo = {};
+  ventasMes.forEach(v => (v.items||[]).forEach(it => {
+    const k = it.codigo;
+    conteo[k] = conteo[k] || { nombre: it.descripcion, cant: 0 };
+    conteo[k].cant += parseFloat(it.cantidad)||0;
+  }));
+  const top = Object.entries(conteo).sort((a,b) => b[1].cant - a[1].cant).slice(0,5);
+
+  const porVendedor = {};
+  ventasMes.forEach(v => {
+    const k = v.vendedorNombre || v.vendedor || 'Desconocido';
+    porVendedor[k] = porVendedor[k] || { usd: 0, n: 0 };
+    porVendedor[k].usd += parseFloat(v.totalUSD)||0;
+    porVendedor[k].n++;
+  });
+
+  const criticos = STATE.productos
+    .filter(p => (parseFloat(p.stock)||0) <= (parseFloat(p.stockMinimo)||3))
+    .sort((a,b) => (parseFloat(a.stock)||0) - (parseFloat(b.stock)||0))
+    .slice(0,10);
+
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-gauge-high"></i> Dashboard</h2>
+
+    <div class="info-box" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <strong><i class="fas fa-dollar-sign"></i> Tasa BCV:</strong>
+        <span style="font-size:1.3rem;font-weight:700;color:#1a1a1a;">
+              ${parseFloat(STATE.config.tasaBCV).toFixed(2)}</span> Bs/$
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="renderSection('configuracion')">
+        <i class="fas fa-edit"></i> Cambiar tasa</button>
+    </div>
+
+    <div class="cards-grid">
+      <div class="stat-card"><div class="label">Ventas Hoy USD</div>
+        <div class="value">${fmtUSD(totalHoyUSD)}</div>
+        <div class="sub">${ventasHoy.length} transacciones</div></div>
+      <div class="stat-card green"><div class="label">Ventas Hoy Bs</div>
+        <div class="value" style="font-size:1.3rem;">${fmtBs(totalHoyBs)}</div>
+        <div class="sub">Equivalente tasa del día</div></div>
+      <div class="stat-card orange"><div class="label">Stock Bajo</div>
+        <div class="value">${stockBajo}</div>
+        <div class="sub">≤ stock mínimo</div></div>
+      <div class="stat-card red"><div class="label">Agotados</div>
+        <div class="value">${agotados}</div>
+        <div class="sub">Compra urgente</div></div>
+      <div class="stat-card purple"><div class="label">Total Productos</div>
+        <div class="value">${totalProductos}</div>
+        <div class="sub">SKUs activos</div></div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;color:#1a1a1a;font-size:1.05rem;">
+      <i class="fas fa-triangle-exclamation" style="color:#c0392b;"></i>
+      Alertas de Stock Crítico</h3>
+    <div>
+      ${criticos.length === 0
+        ? '<div class="success-box">No hay productos con stock crítico.</div>'
+        : criticos.map(p => {
+            const stock = parseFloat(p.stock)||0;
+            const min = parseFloat(p.stockMinimo)||3;
+            const crit = stock === 0;
+            return `<div class="alert-item ${crit?'':'warn'}">
+              <div>
+                <strong>${p.nombre||''}</strong>
+                <small style="color:#7f8c8d;display:block;">
+                  ${p.codigo||''} · ${p.modelo||''} · ${p.proveedor||''}
+                </small>
+              </div>
+              <div style="text-align:right;">
+                <div class="qty">${stock} und</div>
+                <small>mín: ${min}</small>
+              </div>
+            </div>`;
+          }).join('')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin-top:22px;">
+      <div>
+        <h3 style="margin-bottom:12px;color:#1a1a1a;font-size:1.05rem;">
+          <i class="fas fa-trophy" style="color:#e85a1a;"></i> Top 5 Productos del Mes</h3>
+        ${top.length === 0
+          ? '<div class="info-box">Sin ventas este mes.</div>'
+          : `<div class="table-wrap"><table><thead><tr>
+              <th>#</th><th>Producto</th><th>Vendidos</th></tr></thead><tbody>
+              ${top.map((t,i) => `<tr><td><strong>${i+1}</strong></td>
+                <td>${t[1].nombre}</td>
+                <td><span class="badge badge-green">${t[1].cant} und</span></td>
+              </tr>`).join('')}
+            </tbody></table></div>`}
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px;color:#1a1a1a;font-size:1.05rem;">
+          <i class="fas fa-user-tie" style="color:#e85a1a;"></i> Ventas por Vendedor (Mes)</h3>
+        ${Object.keys(porVendedor).length === 0
+          ? '<div class="info-box">Sin datos.</div>'
+          : `<div class="table-wrap"><table><thead><tr>
+              <th>Vendedor</th><th>Nº</th><th>Total USD</th></tr></thead><tbody>
+              ${Object.entries(porVendedor).map(([k,v]) => `<tr>
+                <td><strong>${k}</strong></td><td>${v.n}</td>
+                <td>${fmtUSD(v.usd)}</td>
+              </tr>`).join('')}
+            </tbody></table></div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderUsuarios(main){
+  if(STATE.user.rol !== 'admin'){
+    main.innerHTML = '<div class="section active"><div class="empty-state">' +
+      '<i class="fas fa-lock"></i>Solo administradores</div></div>';
+    return;
+  }
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-user-shield"></i> Gestión de Usuarios</h2>
+    <div class="filters-bar">
+      <button class="btn btn-primary" onclick="openNuevoUsuario()">
+        <i class="fas fa-plus"></i> Nuevo Usuario</button>
+      <input type="text" id="buscaUser" placeholder="Buscar..."
+             oninput="renderTablaUsuarios()">
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th>
+        <th>Último login</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tbodyUsuarios"></tbody>
+    </table></div>
+  </div>`;
+  renderTablaUsuarios();
+}
+
+function renderTablaUsuarios(){
+  const tb = document.getElementById('tbodyUsuarios');
+  if(!tb) return;
+  const f = (document.getElementById('buscaUser')?.value||'').toLowerCase();
+  const lista = STATE.usuarios.filter(u =>
+    !f || u.usuario.toLowerCase().includes(f) ||
+    (u.nombre||'').toLowerCase().includes(f));
+  if(lista.length === 0){
+    tb.innerHTML = '<tr><td colspan="6" class="empty-state">Sin usuarios</td></tr>';
+    return;
+  }
+  tb.innerHTML = lista.map(u => `
+    <tr>
+      <td><strong>${u.usuario}</strong></td>
+      <td>${u.nombre||'-'}</td>
+      <td><span class="badge ${u.rol==='admin'?'badge-red':'badge-blue'}">
+        ${u.rol.toUpperCase()}</span></td>
+      <td>${u.activo
+        ? '<span class="badge badge-green">Activo</span>'
+        : '<span class="badge badge-gray">Inactivo</span>'}</td>
+      <td>${u.lastLogin ? fmtFecha(u.lastLogin) : 'Nunca'}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick="openResetPass('${u.id}')">
+          <i class="fas fa-key"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="openEditUsuario('${u.id}')">
+          <i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelUsuario('${u.id}')">
+          <i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+function openNuevoUsuario(){
+  document.getElementById('modalUsuarioTitle').textContent = 'Nuevo Usuario';
+  ['uUsuario','uNombre','uPass','uPass2'].forEach(i =>
+    document.getElementById(i).value = '');
+  document.getElementById('uUsuario').disabled = false;
+  document.getElementById('uRol').value = 'vendedor';
+  document.getElementById('uActivo').value = 'true';
+  document.getElementById('uPass').placeholder = 'Mínimo 6 caracteres';
+  document.getElementById('uMsg').textContent = '';
+  document.getElementById('uMsg').dataset.editId = '';
+  openModal('modalUsuario');
+}
+
+function openEditUsuario(id){
+  const u = STATE.usuarios.find(x => x.id === id);
+  if(!u) return;
+  document.getElementById('modalUsuarioTitle').textContent = 'Editar Usuario';
+  document.getElementById('uUsuario').value = u.usuario;
+  document.getElementById('uUsuario').disabled = true;
+  document.getElementById('uNombre').value = u.nombre||'';
+  document.getElementById('uRol').value = u.rol;
+  document.getElementById('uActivo').value = u.activo ? 'true':'false';
+  document.getElementById('uPass').value = '';
+  document.getElementById('uPass2').value = '';
+  document.getElementById('uPass').placeholder = 'Dejar vacío = no cambiar';
+  document.getElementById('uMsg').textContent = '';
+  document.getElementById('uMsg').dataset.editId = id;
+  openModal('modalUsuario');
+}
+
+function openResetPass(id){
+  const u = STATE.usuarios.find(x => x.id === id);
+  if(!u) return;
+  document.getElementById('modalUsuarioTitle').textContent =
+    'Resetear contraseña: ' + u.nombre;
+  document.getElementById('uUsuario').value = u.usuario;
+  document.getElementById('uUsuario').disabled = true;
+  document.getElementById('uNombre').value = u.nombre||'';
+  document.getElementById('uRol').value = u.rol;
+  document.getElementById('uActivo').value = u.activo?'true':'false';
+  document.getElementById('uPass').value = '';
+  document.getElementById('uPass2').value = '';
+  document.getElementById('uPass').placeholder = 'Nueva contraseña';
+  document.getElementById('uMsg').textContent = '';
+  document.getElementById('uMsg').dataset.editId = id;
+  openModal('modalUsuario');
+}
+
+function saveUsuario(){
+  const editId = document.getElementById('uMsg').dataset.editId;
+  const usuario = document.getElementById('uUsuario').value.trim().toLowerCase();
+  const nombre = document.getElementById('uNombre').value.trim();
+  const rol = document.getElementById('uRol').value;
+  const activo = document.getElementById('uActivo').value === 'true';
+  const p1 = document.getElementById('uPass').value;
+  const p2 = document.getElementById('uPass2').value;
+  const msg = document.getElementById('uMsg');
+
+  if(!usuario || !nombre){
+    msg.className='login-msg error'; msg.textContent='Usuario y nombre obligatorios'; return;
+  }
+  if(!editId || p1){
+    if(p1.length < 6){ msg.className='login-msg error';
+      msg.textContent='Contraseña mínimo 6 caracteres'; return; }
+    if(p1 !== p2){ msg.className='login-msg error';
+      msg.textContent='Las contraseñas no coinciden'; return; }
+  }
+
+  if(editId){
+    const u = STATE.usuarios.find(x => x.id === editId);
+    if(!u) return;
+    u.nombre = nombre; u.rol = rol; u.activo = activo;
+    if(p1) u.passwordHash = hashSimple(p1);
+    toast('Usuario actualizado', 'success');
+  } else {
+    if(STATE.usuarios.some(u => u.usuario === usuario)){
+      msg.className='login-msg error'; msg.textContent='Ya existe ese usuario'; return;
+    }
+    STATE.usuarios.push({
+      id: uid('usr'), usuario, nombre, rol, activo,
+      passwordHash: hashSimple(p1),
+      createdAt: hoyISO(), createdBy: STATE.user.usuario, lastLogin: null
+    });
+    toast('Usuario creado', 'success');
+  }
+  guardarTodo();
+  closeModal('modalUsuario');
+  renderTablaUsuarios();
+}
+
+function confirmDelUsuario(id){
+  const u = STATE.usuarios.find(x => x.id === id);
+  if(!u) return;
+  if(u.usuario === 'admin'){ toast('No se puede eliminar al admin', 'error'); return; }
+  if(u.usuario === STATE.user.usuario){ toast('No puede eliminarse a sí mismo', 'error'); return; }
+  document.getElementById('confirmText').innerHTML =
+    `¿Eliminar a <strong>${u.usuario}</strong>?`;
+  document.getElementById('confirmBtn').onclick = () => {
+    STATE.usuarios = STATE.usuarios.filter(x => x.id !== id);
+    guardarTodo();
+    toast('Usuario eliminado', 'success');
+    closeModal('modalConfirm');
+    renderTablaUsuarios();
+  };
+  openModal('modalConfirm');
+}
+
+function openMiPerfil(){
+  document.getElementById('perfilUser').textContent = STATE.user.usuario;
+  document.getElementById('perfilNombre').textContent = STATE.user.nombre;
+  document.getElementById('perfilRol').textContent = STATE.user.rol.toUpperCase();
+  ['perfilPassOld','perfilPassNew','perfilPassNew2'].forEach(i =>
+    document.getElementById(i).value = '');
+  document.getElementById('perfilMsg').textContent = '';
+  openModal('modalMiPerfil');
+}
+
+function cambiarMiPass(){
+  const oldP = document.getElementById('perfilPassOld').value;
+  const n1 = document.getElementById('perfilPassNew').value;
+  const n2 = document.getElementById('perfilPassNew2').value;
+  const msg = document.getElementById('perfilMsg');
+  if(!oldP || !n1 || !n2){ msg.className='login-msg error';
+    msg.textContent='Complete todos los campos'; return; }
+  if(n1.length < 6){ msg.className='login-msg error';
+    msg.textContent='Mínimo 6 caracteres'; return; }
+  if(n1 !== n2){ msg.className='login-msg error';
+    msg.textContent='Las contraseñas no coinciden'; return; }
+
+  const u = STATE.usuarios.find(x => x.id === STATE.user.id);
+  if(!u) return;
+  if(hashSimple(oldP) !== u.passwordHash){
+    msg.className='login-msg error'; msg.textContent='Contraseña actual incorrecta'; return;
+  }
+  u.passwordHash = hashSimple(n1);
+  guardarTodo();
+  msg.className='login-msg success'; msg.textContent='¡Contraseña actualizada!';
+  toast('Contraseña actualizada', 'success');
+  setTimeout(() => closeModal('modalMiPerfil'), 1200);
+}
+
+function renderInventario(main){
+  const modelos = [...new Set(STATE.productos.map(p => p.modelo).filter(Boolean))].sort();
+  const proveedores = [...new Set(STATE.productos.map(p => p.proveedor).filter(Boolean))].sort();
+
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-boxes-stacked"></i> Inventario</h2>
+
+    <div class="filters-bar">
+      <input type="text" id="invBusca" placeholder="Buscar por código o descripción..."
+             oninput="renderTablaInventario()">
+      <select id="invModelo" onchange="renderTablaInventario()">
+        <option value="">Todos los modelos</option>
+        ${modelos.map(m => `<option value="${m}">${m}</option>`).join('')}
+      </select>
+      <select id="invProveedor" onchange="renderTablaInventario()">
+        <option value="">Todos los proveedores</option>
+        ${proveedores.map(p => `<option value="${p}">${p}</option>`).join('')}
+      </select>
+      <select id="invStock" onchange="renderTablaInventario()">
+        <option value="">Todo el stock</option>
+        <option value="agotado">Agotados (0)</option>
+        <option value="bajo">Stock bajo (≤ mínimo)</option>
+        <option value="normal">Stock normal</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="openNuevoProducto()">
+        <i class="fas fa-plus"></i> Nuevo</button>
+      <button class="btn btn-success btn-sm" onclick="exportarInventarioExcel()">
+        <i class="fas fa-file-excel"></i> Excel</button>
+      <button class="btn btn-danger btn-sm" onclick="exportarInventarioPDF()">
+        <i class="fas fa-file-pdf"></i> PDF</button>
+    </div>
+
+    <div class="info-box" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <span><strong id="invTotal">0</strong> productos encontrados</span>
+      <span>Valor inventario: <strong id="invValor">$0.00</strong> (costo)</span>
+      <span>Ganancia potencial: <strong id="invGanancia">$0.00</strong></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Código</th><th>Descripción</th><th>Modelo</th><th>Proveedor</th>
+          <th>Stock</th><th>Costo $</th><th>Venta $</th><th>Venta Bs</th>
+          <th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbodyInventario"></tbody>
+      </table>
+    </div>
+  </div>`;
+  renderTablaInventario();
+}
+
+function renderTablaInventario(){
+  const tb = document.getElementById('tbodyInventario');
+  if(!tb) return;
+  const f = (document.getElementById('invBusca')?.value||'').toLowerCase();
+  const fm = document.getElementById('invModelo')?.value||'';
+  const fp = document.getElementById('invProveedor')?.value||'';
+  const fs = document.getElementById('invStock')?.value||'';
+
+  let lista = STATE.productos.filter(p => {
+    if(f && !(p.codigo||'').toLowerCase().includes(f) &&
+            !(p.nombre||'').toLowerCase().includes(f)) return false;
+    if(fm && p.modelo !== fm) return false;
+    if(fp && p.proveedor !== fp) return false;
+    const stock = parseFloat(p.stock)||0;
+    const min = parseFloat(p.stockMinimo)||3;
+    if(fs === 'agotado' && stock !== 0) return false;
+    if(fs === 'bajo' && !(stock > 0 && stock <= min)) return false;
+    if(fs === 'normal' && stock <= min) return false;
+    return true;
+  }).sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  let valorCosto = 0, gananciaPot = 0;
+  lista.forEach(p => {
+    const s = parseFloat(p.stock)||0;
+    valorCosto += s * (parseFloat(p.precioCostoUSD)||0);
+    gananciaPot += s * ((parseFloat(p.precioVentaUSD)||0) - (parseFloat(p.precioCostoUSD)||0));
+  });
+  document.getElementById('invTotal').textContent = lista.length;
+  document.getElementById('invValor').textContent = fmtUSD(valorCosto);
+  document.getElementById('invGanancia').textContent = fmtUSD(gananciaPot);
+
+  if(lista.length === 0){
+    tb.innerHTML = '<tr><td colspan="10" class="empty-state">' +
+      '<i class="fas fa-box-open"></i>Sin productos. Importa tu Excel desde el menú "Importar"</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = lista.map(p => {
+    const stock = parseFloat(p.stock)||0;
+    const min = parseFloat(p.stockMinimo)||3;
+    const pc = parseFloat(p.precioCostoUSD)||0;
+    const pv = parseFloat(p.precioVentaUSD)||0;
+    const pvBs = pv * tasa;
+    let estado, badge;
+    if(stock === 0){ estado='Agotado'; badge='badge-red'; }
+    else if(stock <= min){ estado='Stock bajo'; badge='badge-orange'; }
+    else { estado='Normal'; badge='badge-green'; }
+    return `<tr>
+      <td><strong>${p.codigo||'-'}</strong></td>
+      <td>${p.nombre||'-'}</td>
+      <td>${p.modelo||'-'}</td>
+      <td>${p.proveedor||'-'}</td>
+      <td><strong>${stock}</strong></td>
+      <td>${fmtUSD(pc)}</td>
+      <td>${fmtUSD(pv)}</td>
+      <td>${fmtBs(pvBs)}</td>
+      <td><span class="badge ${badge}">${estado}</span></td>
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="openEditProducto('${p.id}')">
+          <i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-warning" onclick="openAjustarStock('${p.id}')">
+          <i class="fas fa-sliders-h"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelProducto('${p.id}')">
+          <i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openNuevoProducto(){
+  const margen = parseFloat(STATE.config.margenDefault)||40;
+  document.getElementById('modalProductoTitle').textContent = 'Nuevo Producto';
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Código *</label>
+        <input type="text" id="pCodigo" placeholder="Ej: SJ6-90-05-3190-005"></div>
+      <div class="form-group"><label>Descripción *</label>
+        <input type="text" id="pNombre" placeholder="Nombre del repuesto"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Modelo</label>
+        <input type="text" id="pModelo" placeholder="Ej: HORSE 150"></div>
+      <div class="form-group"><label>Proveedor</label>
+        <input type="text" id="pProveedor" placeholder="Ej: AXMOTO"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Precio Costo USD *</label>
+        <input type="number" id="pCosto" step="0.01" min="0" value="0"></div>
+      <div class="form-group"><label>Margen (%)</label>
+        <input type="number" id="pMargen" step="1" min="0" value="${margen}"
+               oninput="recalcPV()"></div>
+      <div class="form-group"><label>Precio Venta USD *</label>
+        <input type="number" id="pVenta" step="0.01" min="0" value="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Stock inicial</label>
+        <input type="number" id="pStock" step="1" min="0" value="0"></div>
+      <div class="form-group"><label>Stock mínimo</label>
+        <input type="number" id="pStockMin" step="1" min="1"
+               value="${STATE.config.stockMinDefault}"></div>
+      <div class="form-group"><label>Ubicación física</label>
+        <input type="text" id="pUbicacion" placeholder="Ej: Estante A3"></div>
+    </div>
+    <div id="pMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProducto()">
+        <i class="fas fa-save"></i> Guardar</button>
+    </div>`;
+  document.getElementById('pCosto').addEventListener('input', recalcPV);
+  document.getElementById('pMsg').dataset.editId = '';
+  openModal('modalProducto');
+}
+
+function recalcPV(){
+  const c = parseFloat(document.getElementById('pCosto').value)||0;
+  const m = parseFloat(document.getElementById('pMargen').value)||0;
+  document.getElementById('pVenta').value = (c * (1 + m/100)).toFixed(2);
+}
+
+function openEditProducto(id){
+  const p = STATE.productos.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('modalProductoTitle').textContent = 'Editar Producto';
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Código *</label>
+        <input type="text" id="pCodigo" value="${p.codigo||''}"></div>
+      <div class="form-group"><label>Descripción *</label>
+        <input type="text" id="pNombre" value="${(p.nombre||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Modelo</label>
+        <input type="text" id="pModelo" value="${(p.modelo||'').replace(/"/g,'&quot;')}"></div>
+      <div class="form-group"><label>Proveedor</label>
+        <input type="text" id="pProveedor" value="${(p.proveedor||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Precio Costo USD</label>
+        <input type="number" id="pCosto" step="0.01" value="${p.precioCostoUSD||0}"
+               oninput="recalcPV()"></div>
+      <div class="form-group"><label>Margen (%)</label>
+        <input type="number" id="pMargen" step="1"
+               value="${p.precioCostoUSD ? Math.round(((p.precioVentaUSD/p.precioCostoUSD)-1)*100) : 0}"
+               oninput="recalcPV()"></div>
+      <div class="form-group"><label>Precio Venta USD</label>
+        <input type="number" id="pVenta" step="0.01" value="${p.precioVentaUSD||0}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Stock actual</label>
+        <input type="number" id="pStock" step="1" value="${p.stock||0}"></div>
+      <div class="form-group"><label>Stock mínimo</label>
+        <input type="number" id="pStockMin" step="1" value="${p.stockMinimo||3}"></div>
+      <div class="form-group"><label>Ubicación</label>
+        <input type="text" id="pUbicacion" value="${(p.ubicacion||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <div id="pMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProducto()">
+        <i class="fas fa-save"></i> Guardar</button>
+    </div>`;
+  document.getElementById('pMsg').dataset.editId = id;
+  openModal('modalProducto');
+}
+
+function saveProducto(){
+  const editId = document.getElementById('pMsg').dataset.editId;
+  const codigo = document.getElementById('pCodigo').value.trim();
+  const nombre = document.getElementById('pNombre').value.trim();
+  const modelo = document.getElementById('pModelo').value.trim();
+  const proveedor = document.getElementById('pProveedor').value.trim();
+  const pc = parseFloat(document.getElementById('pCosto').value)||0;
+  const pv = parseFloat(document.getElementById('pVenta').value)||0;
+  const stock = parseFloat(document.getElementById('pStock').value)||0;
+  const stockMin = parseFloat(document.getElementById('pStockMin').value)||3;
+  const ubicacion = document.getElementById('pUbicacion').value.trim();
+  const msg = document.getElementById('pMsg');
+
+  if(!codigo || !nombre){
+    msg.className='login-msg error'; msg.textContent='Código y nombre obligatorios'; return;
+  }
+
+  if(editId){
+    const p = STATE.productos.find(x => x.id === editId);
+    if(!p) return;
+    Object.assign(p, {
+      codigo, nombre, modelo, proveedor,
+      precioCostoUSD: pc, precioVentaUSD: pv,
+      stock, stockMinimo: stockMin, ubicacion,
+      updatedAt: hoyISO()
+    });
+    toast('Producto actualizado', 'success');
+  } else {
+    if(STATE.productos.some(p => p.codigo === codigo)){
+      msg.className='login-msg error'; msg.textContent='Ese código ya existe'; return;
+    }
+    const nuevo = {
+      id: uid('prod'),
+      codigo, nombre, modelo, proveedor,
+      precioCostoUSD: pc, precioVentaUSD: pv,
+      stock, stockMinimo: stockMin, ubicacion,
+      createdAt: hoyISO()
+    };
+    STATE.productos.push(nuevo);
+    if(stock > 0){
+      STATE.movimientos.push({
+        id: uid('mov'), fechaHora: hoyISO(), tipo: 'entrada',
+        productoId: nuevo.id, producto: nombre, codigo: codigo,
+        cantidad: stock, stockAntes: 0, stockDespues: stock,
+        motivo: 'Creación de producto',
+        usuario: STATE.user.usuario, usuarioNombre: STATE.user.nombre
+      });
+    }
+    toast('Producto creado', 'success');
+  }
+  guardarTodo();
+  closeModal('modalProducto');
+  renderTablaInventario();
+}
+
+function openAjustarStock(id){
+  const p = STATE.productos.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('modalProductoTitle').textContent = 'Ajustar Stock: ' + p.nombre;
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="info-box">
+      <strong>Stock actual:</strong> ${p.stock||0} unidades<br>
+      <strong>Código:</strong> ${p.codigo}
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Tipo de ajuste</label>
+        <select id="ajTipo">
+          <option value="entrada">Entrada (+)</option>
+          <option value="salida">Salida (-)</option>
+          <option value="set">Establecer stock exacto</option>
+        </select></div>
+      <div class="form-group"><label>Cantidad *</label>
+        <input type="number" id="ajCantidad" step="1" min="0" value="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full"><label>Motivo *</label>
+        <input type="text" id="ajMotivo" placeholder="Ej: Ajuste por inventario físico"></div>
+    </div>
+    <div id="ajMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-warning" onclick="aplicarAjuste('${id}')">
+        <i class="fas fa-check"></i> Aplicar</button>
+    </div>`;
+  openModal('modalProducto');
+}
+
+function aplicarAjuste(id){
+  const p = STATE.productos.find(x => x.id === id);
+  if(!p) return;
+  const tipo = document.getElementById('ajTipo').value;
+  const cant = parseFloat(document.getElementById('ajCantidad').value)||0;
+  const motivo = document.getElementById('ajMotivo').value.trim();
+  const msg = document.getElementById('ajMsg');
+
+  if(cant <= 0 && tipo !== 'set'){
+    msg.className='login-msg error'; msg.textContent='Cantidad debe ser mayor a 0'; return;
+  }
+  if(!motivo){ msg.className='login-msg error'; msg.textContent='Indique motivo'; return; }
+
+  const antes = parseFloat(p.stock)||0;
+  let despues = antes;
+  if(tipo === 'entrada') despues = antes + cant;
+  else if(tipo === 'salida'){
+    if(cant > antes){ msg.className='login-msg error';
+      msg.textContent='No hay suficiente stock'; return; }
+    despues = antes - cant;
+  } else if(tipo === 'set') despues = cant;
+
+  p.stock = despues;
+  p.updatedAt = hoyISO();
+  STATE.movimientos.push({
+    id: uid('mov'), fechaHora: hoyISO(), tipo: 'ajuste',
+    productoId: p.id, producto: p.nombre, codigo: p.codigo,
+    cantidad: Math.abs(despues - antes),
+    stockAntes: antes, stockDespues: despues,
+    motivo: motivo,
+    usuario: STATE.user.usuario, usuarioNombre: STATE.user.nombre
+  });
+  guardarTodo();
+  toast(`Stock actualizado: ${antes} → ${despues}`, 'success');
+  closeModal('modalProducto');
+  renderTablaInventario();
+}
+
+function confirmDelProducto(id){
+  const p = STATE.productos.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('confirmText').innerHTML =
+    `¿Eliminar <strong>${p.nombre}</strong> (${p.codigo})?<br>
+     <small style="color:#c0392b;">Esta acción no se puede deshacer.</small>`;
+  document.getElementById('confirmBtn').onclick = () => {
+    STATE.productos = STATE.productos.filter(x => x.id !== id);
+    guardarTodo();
+    toast('Producto eliminado', 'success');
+    closeModal('modalConfirm');
+    renderTablaInventario();
+  };
+  openModal('modalConfirm');
+}
+
+function exportarInventarioExcel(){
+  if(STATE.productos.length === 0){ toast('No hay productos', 'warning'); return; }
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  const data = STATE.productos.map(p => ({
+    Codigo: p.codigo, Descripcion: p.nombre, Modelo: p.modelo||'',
+    Proveedor: p.proveedor||'', Stock: p.stock||0,
+    Stock_Minimo: p.stockMinimo||3,
+    Precio_Costo_USD: p.precioCostoUSD||0,
+    Precio_Venta_USD: p.precioVentaUSD||0,
+    Precio_Venta_Bs: ((p.precioVentaUSD||0)*tasa).toFixed(2),
+    Ubicacion: p.ubicacion||''
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Inventario');
+  XLSX.writeFile(wb, `inventario-${hoyFecha()}.xlsx`);
+  toast('Excel exportado', 'success');
+}
+
+function exportarInventarioPDF(){
+  if(STATE.productos.length === 0){ toast('No hay productos', 'warning'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('landscape');
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+
+  doc.setFontSize(16);
+  doc.text('Inventario — ' + STATE.config.empresa, 14, 15);
+  doc.setFontSize(10);
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')} | Tasa BCV: ${tasa.toFixed(2)} Bs/$`, 14, 23);
+  doc.text(`Total productos: ${STATE.productos.length}`, 14, 30);
+
+  const td = STATE.productos.map(p => [
+    p.codigo, p.nombre, p.modelo||'', p.proveedor||'',
+    p.stock||0, fmtUSD(p.precioCostoUSD), fmtUSD(p.precioVentaUSD),
+    fmtBs((p.precioVentaUSD||0)*tasa)
+  ]);
+  doc.autoTable({
+    head: [['Código','Descripción','Modelo','Proveedor','Stock','Costo','Venta USD','Venta Bs']],
+    body: td, startY: 37, headStyles: {fillColor: [26,26,26]},
+    styles: {fontSize: 7}
+  });
+  doc.save(`inventario-${hoyFecha()}.pdf`);
+  toast('PDF exportado', 'success');
+}
+
+function renderImportar(main){
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-file-import"></i> Importar Inventario</h2>
+
+    <div class="warn-box">
+      <strong><i class="fas fa-exclamation-triangle"></i> Antes de importar:</strong><br>
+      • El sistema detecta automáticamente los encabezados (busca "CODIGO").<br>
+      • Columnas reconocidas: CODIGO, DESCRIPCION, MODELO, PROVEEDOR/PROVEEDRO, PRECIO USD UNITARIO, <strong>CANTIDAD SOLICITADA</strong>.<br>
+      • La columna "CANTIDAD SOLICITADA" se usa como <strong>stock inicial</strong>.<br>
+      • Si el código ya existe, se actualizará (no duplica).<br>
+      • Recomendado: <strong>Excel</strong>. El PDF funciona si el texto es seleccionable.
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Margen a aplicar (%)</label>
+        <input type="number" id="impMargen" step="1" min="0"
+               value="${STATE.config.margenDefault}">
+        <small>Precio Venta = Costo × (1 + margen)</small>
+      </div>
+      <div class="form-group">
+        <label>Stock mínimo por defecto</label>
+        <input type="number" id="impStockMin" step="1" min="1"
+               value="${STATE.config.stockMinDefault}">
+      </div>
+      <div class="form-group">
+        <label>Si el código ya existe</label>
+        <select id="impExistente">
+          <option value="actualizar">Actualizar datos (recomendado)</option>
+          <option value="saltar">Saltar (no tocar)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+      <div class="stat-card" style="text-align:center;cursor:pointer;border-left-color:#2d8a5c;"
+           onclick="document.getElementById('fileExcel').click()">
+        <div style="font-size:2.5rem;color:#2d8a5c;margin-bottom:10px;">
+          <i class="fas fa-file-excel"></i></div>
+        <h3>Subir Excel</h3>
+        <p class="sub">.xlsx, .xls, .csv</p>
+        <input type="file" id="fileExcel" accept=".xlsx,.xls,.csv"
+               style="display:none" onchange="importarExcel(event)">
+      </div>
+      <div class="stat-card" style="text-align:center;cursor:pointer;border-left-color:#c0392b;"
+           onclick="document.getElementById('filePDF').click()">
+        <div style="font-size:2.5rem;color:#c0392b;margin-bottom:10px;">
+          <i class="fas fa-file-pdf"></i></div>
+        <h3>Subir PDF</h3>
+        <p class="sub">Solo si tiene texto seleccionable</p>
+        <input type="file" id="filePDF" accept=".pdf"
+               style="display:none" onchange="importarPDF(event)">
+      </div>
+    </div>
+
+    <div id="importPreview" style="margin-top:20px;"></div>
+  </div>`;
+}
+
+let importDataTemp = [];
+
+function importarExcel(evt){
+  const f = evt.target.files[0];
+  if(!f) return;
+  showLoader(true, 'Leyendo Excel...');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const hoja = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(hoja, {header:1, defval:''});
+      procesarFilas(rows);
+    } catch(err){
+      console.error(err);
+      toast('Error al leer Excel: ' + err.message, 'error');
+      showLoader(false);
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+async function importarPDF(evt){
+  const f = evt.target.files[0];
+  if(!f) return;
+  showLoader(true, 'Leyendo PDF...');
+  try {
+    const buf = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+    let texto = '';
+    for(let i=1; i<=pdf.numPages; i++){
+      const pagina = await pdf.getPage(i);
+      const content = await pagina.getTextContent();
+      texto += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    if(texto.trim().length < 50){
+      toast('El PDF parece ser imagen escaneada. Usa Excel.', 'warning');
+      showLoader(false);
+      return;
+    }
+    const lineas = texto.split('\n');
+    const filas = [['CODIGO','DESCRIPCION','MODELO','PROVEEDOR','PRECIO USD UNITARIO','CANTIDAD SOLICITADA']];
+    lineas.forEach(l => {
+      const match = l.match(/([A-Z0-9\-\.]{6,})\s+(.+?)\s+([\d]+\.?[\d]*)\s+([\d]+)\s*$/);
+      if(match){
+        filas.push([match[1], match[2], '', '', parseFloat(match[3])||0, parseInt(match[4])||0]);
+      }
+    });
+    if(filas.length < 2){
+      toast('No se pudieron extraer filas. Usa Excel mejor.', 'warning');
+      showLoader(false);
+      return;
+    }
+    procesarFilas(filas);
+  } catch(err){
+    console.error(err);
+    toast('Error al leer PDF: ' + err.message, 'error');
+    showLoader(false);
+  }
+}
+
+function procesarFilas(rows){
+  if(!rows || rows.length < 2){
+    toast('Archivo vacío o sin filas', 'warning');
+    showLoader(false); return;
+  }
+  let headerIdx = -1;
+  for(let i=0; i<Math.min(rows.length, 15); i++){
+    const fila = rows[i].map(c => String(c||'').toUpperCase().trim());
+    if(fila.some(c => c.includes('CODIGO') || c.includes('CÓDIGO'))){
+      headerIdx = i; break;
+    }
+  }
+  if(headerIdx === -1){
+    toast('No se encontró la columna "CODIGO" en el archivo', 'error');
+    showLoader(false); return;
+  }
+
+  const headers = rows[headerIdx].map(c => String(c||'').toUpperCase().trim());
+  const findCol = (...aliases) => {
+    for(const a of aliases){
+      const idx = headers.findIndex(h => h.includes(a));
+      if(idx !== -1) return idx;
+    }
+    return -1;
+  };
+  const colCod = findCol('CODIGO','CÓDIGO','COD','SKU');
+  const colNom = findCol('DESCRIPCION','DESCRIPCIÓN','NOMBRE','PRODUCTO');
+  const colMod = findCol('MODELO','MODEL','APLICACION');
+  const colProv = findCol('PROVEEDRO','PROVEEDOR','MARCA','SUPLIDOR');
+  const colPre = findCol('PRECIO USD UNITARIO','PRECIO USD','COSTO','PRECIO');
+  const colCant = findCol('CANTIDAD SOLICITADA','CANTIDAD','STOCK','EXISTENCIA','QTY');
+
+  if(colCod === -1 || colNom === -1){
+    toast('Faltan columnas obligatorias (CODIGO, DESCRIPCION)', 'error');
+    showLoader(false); return;
+  }
+
+  const registros = [];
+  for(let i=headerIdx+1; i<rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[colCod]) continue;
+    const codigo = String(r[colCod]).trim();
+    const nombre = String(r[colNom]||'').trim();
+    if(!codigo || !nombre) continue;
+    registros.push({
+      codigo,
+      nombre,
+      modelo: colMod !== -1 ? String(r[colMod]||'').trim() : '',
+      proveedor: colProv !== -1 ? String(r[colProv]||'').trim() : '',
+      precioCostoUSD: colPre !== -1 ? (parseFloat(r[colPre])||0) : 0,
+      stock: colCant !== -1 ? (parseInt(r[colCant])||0) : 0
+    });
+  }
+
+  if(registros.length === 0){
+    toast('No se encontraron productos válidos', 'warning');
+    showLoader(false); return;
+  }
+
+  importDataTemp = registros;
+  mostrarPreviewImportacion();
+  showLoader(false);
+}
+
+function mostrarPreviewImportacion(){
+  const margen = parseFloat(document.getElementById('impMargen').value)||40;
+  const existentes = new Set(STATE.productos.map(p => p.codigo));
+  const nuevos = importDataTemp.filter(r => !existentes.has(r.codigo)).length;
+  const actualizar = importDataTemp.length - nuevos;
+  const conStock = importDataTemp.filter(r => (r.stock||0) > 0).length;
+  const totalUnidades = importDataTemp.reduce((s,r) => s + (parseInt(r.stock)||0), 0);
+
+  const cont = document.getElementById('importPreview');
+  cont.innerHTML = `
+    <div class="success-box">
+      <strong><i class="fas fa-check-circle"></i> ${importDataTemp.length} productos detectados</strong><br>
+      • Nuevos: <strong>${nuevos}</strong><br>
+      • Actualizar existentes: <strong>${actualizar}</strong><br>
+      • Productos con stock: <strong>${conStock}</strong> (${totalUnidades} unidades totales)
+    </div>
+
+    <div class="info-box">
+      <strong>Tip:</strong> La columna "CANTIDAD SOLICITADA" del Excel se
+      está cargando como <strong>stock inicial</strong>.
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Aplicar margen de ${margen}% sobre costo</label>
+        <button class="btn btn-secondary btn-sm" onclick="mostrarPreviewImportacion()">
+          <i class="fas fa-sync"></i> Recalcular vista previa</button>
+      </div>
+    </div>
+
+    <div class="preview-table">
+      <table>
+        <thead><tr>
+          <th>Código</th><th>Descripción</th><th>Modelo</th><th>Proveedor</th>
+          <th>Costo $</th><th>Stock</th><th>Venta $ (${margen}%)</th><th>Estado</th>
+        </tr></thead>
+        <tbody>
+          ${importDataTemp.slice(0, 50).map(r => {
+            const pv = r.precioCostoUSD * (1 + margen/100);
+            const ex = existentes.has(r.codigo);
+            return `<tr>
+              <td>${r.codigo}</td>
+              <td>${r.nombre}</td>
+              <td>${r.modelo}</td>
+              <td>${r.proveedor}</td>
+              <td>${fmtUSD(r.precioCostoUSD)}</td>
+              <td><strong>${r.stock||0}</strong></td>
+              <td>${fmtUSD(pv)}</td>
+              <td>${ex
+                ? '<span class="badge badge-orange">Actualizar</span>'
+                : '<span class="badge badge-green">Nuevo</span>'}</td>
+            </tr>`;
+          }).join('')}
+          ${importDataTemp.length > 50
+            ? `<tr><td colspan="8" style="text-align:center;color:#7f8c8d;">
+                ... y ${importDataTemp.length-50} más</td></tr>` : ''}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-row" style="margin-top:15px;">
+      <div class="form-group" style="max-width:280px;">
+        <label>Cómo actualizar el stock de productos existentes</label>
+        <select id="impStockAccion">
+          <option value="sumar">Sumar el stock del Excel al stock actual</option>
+          <option value="reemplazar">Reemplazar stock con el del Excel</option>
+          <option value="ignorar">Ignorar stock (dejar el actual)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:15px;">
+      <button class="btn btn-success" onclick="confirmarImportacion()">
+        <i class="fas fa-check"></i> Confirmar e Importar ${importDataTemp.length} productos</button>
+      <button class="btn btn-secondary" onclick="cancelarImportacion()">
+        <i class="fas fa-times"></i> Cancelar</button>
+    </div>`;
+}
+
+function cancelarImportacion(){
+  importDataTemp = [];
+  document.getElementById('importPreview').innerHTML = '';
+}
+
+function confirmarImportacion(){
+  if(importDataTemp.length === 0) return;
+  const margen = parseFloat(document.getElementById('impMargen').value)||40;
+  const stockMin = parseInt(document.getElementById('impStockMin').value)||3;
+  const accion = document.getElementById('impExistente').value;
+  const stockAccion = document.getElementById('impStockAccion')?.value || 'sumar';
+  const existentes = new Set(STATE.productos.map(p => p.codigo));
+
+  let creados = 0, actualizados = 0, saltados = 0, conMovimiento = 0;
+  showLoader(true, 'Importando...');
+
+  setTimeout(() => {
+    importDataTemp.forEach(r => {
+      const pv = r.precioCostoUSD * (1 + margen/100);
+      const stk = parseInt(r.stock)||0;
+
+      if(existentes.has(r.codigo)){
+        if(accion === 'saltar'){ saltados++; return; }
+        const p = STATE.productos.find(x => x.codigo === r.codigo);
+        if(p){
+          p.nombre = r.nombre;
+          p.modelo = r.modelo || p.modelo;
+          p.proveedor = r.proveedor || p.proveedor;
+          p.precioCostoUSD = r.precioCostoUSD;
+          p.precioVentaUSD = pv;
+
+          if(stk > 0 && stockAccion !== 'ignorar'){
+            const stockAntes = parseFloat(p.stock)||0;
+            if(stockAccion === 'sumar'){
+              p.stock = stockAntes + stk;
+            } else if(stockAccion === 'reemplazar'){
+              p.stock = stk;
+            }
+            STATE.movimientos.push({
+              id: uid('mov'), fechaHora: hoyISO(), tipo: 'entrada',
+              productoId: p.id, producto: r.nombre, codigo: r.codigo,
+              cantidad: Math.abs((p.stock) - stockAntes),
+              stockAntes: stockAntes, stockDespues: p.stock,
+              motivo: `Importación Excel (${stockAccion})`,
+              usuario: STATE.user.usuario,
+              usuarioNombre: STATE.user.nombre
+            });
+            conMovimiento++;
+          }
+          p.updatedAt = hoyISO();
+          actualizados++;
+        }
+      } else {
+        const nuevo = {
+          id: uid('prod'),
+          codigo: r.codigo,
+          nombre: r.nombre,
+          modelo: r.modelo,
+          proveedor: r.proveedor,
+          precioCostoUSD: r.precioCostoUSD,
+          precioVentaUSD: pv,
+          stock: stk,
+          stockMinimo: stockMin,
+          ubicacion: '',
+          createdAt: hoyISO()
+        };
+        STATE.productos.push(nuevo);
+        if(stk > 0){
+          STATE.movimientos.push({
+            id: uid('mov'), fechaHora: hoyISO(), tipo: 'entrada',
+            productoId: nuevo.id, producto: r.nombre, codigo: r.codigo,
+            cantidad: stk, stockAntes: 0, stockDespues: stk,
+            motivo: 'Importación inicial desde Excel',
+            usuario: STATE.user.usuario,
+            usuarioNombre: STATE.user.nombre
+          });
+          conMovimiento++;
+        }
+        creados++;
+      }
+    });
+    guardarTodo();
+    showLoader(false);
+    toast(`Importación: ${creados} nuevos, ${actualizados} actualizados, ${saltados} saltados, ${conMovimiento} con stock`, 'success');
+    importDataTemp = [];
+    renderSection('inventario');
+  }, 500);
+}
+
+function renderMovimientos(main){
+  const tipos = ['entrada','salida','ajuste','venta','devolucion','compra'];
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-right-left"></i> Movimientos / Kardex</h2>
+
+    <div class="filters-bar">
+      <input type="text" id="movBusca" placeholder="Buscar producto..."
+             oninput="renderTablaMovimientos()">
+      <select id="movTipo" onchange="renderTablaMovimientos()">
+        <option value="">Todos los tipos</option>
+        ${tipos.map(t => `<option value="${t}">${t.toUpperCase()}</option>`).join('')}
+      </select>
+      <input type="date" id="movDesde" onchange="renderTablaMovimientos()">
+      <input type="date" id="movHasta" onchange="renderTablaMovimientos()">
+      <button class="btn btn-secondary btn-sm" onclick="limpiarFiltrosMov()">
+        <i class="fas fa-times"></i> Limpiar</button>
+      <button class="btn btn-success btn-sm" onclick="exportarMovExcel()">
+        <i class="fas fa-file-excel"></i> Excel</button>
+      <button class="btn btn-danger btn-sm" onclick="exportarMovPDF()">
+        <i class="fas fa-file-pdf"></i> PDF</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Tipo</th><th>Código</th><th>Producto</th>
+          <th>Cantidad</th><th>Stock Antes</th><th>Stock Después</th>
+          <th>Motivo/Usuario</th>
+        </tr></thead>
+        <tbody id="tbodyMovimientos"></tbody>
+      </table>
+    </div>
+  </div>`;
+  renderTablaMovimientos();
+}
+
+function limpiarFiltrosMov(){
+  ['movBusca','movTipo','movDesde','movHasta'].forEach(i =>
+    document.getElementById(i).value = '');
+  renderTablaMovimientos();
+}
+
+function renderTablaMovimientos(){
+  const tb = document.getElementById('tbodyMovimientos');
+  if(!tb) return;
+  const f = (document.getElementById('movBusca')?.value||'').toLowerCase();
+  const t = document.getElementById('movTipo')?.value||'';
+  const d1 = document.getElementById('movDesde')?.value||'';
+  const d2 = document.getElementById('movHasta')?.value||'';
+
+  let lista = [...STATE.movimientos].sort((a,b) =>
+    new Date(b.fechaHora) - new Date(a.fechaHora));
+
+  lista = lista.filter(m => {
+    if(f && !(m.producto||'').toLowerCase().includes(f) &&
+            !(m.codigo||'').toLowerCase().includes(f)) return false;
+    if(t && m.tipo !== t) return false;
+    if(d1 && m.fechaHora && m.fechaHora.split('T')[0] < d1) return false;
+    if(d2 && m.fechaHora && m.fechaHora.split('T')[0] > d2) return false;
+    return true;
+  });
+
+  if(lista.length === 0){
+    tb.innerHTML = '<tr><td colspan="8" class="empty-state">' +
+      '<i class="fas fa-inbox"></i>Sin movimientos</td></tr>';
+    return;
+  }
+
+  const badges = { entrada:'badge-green', salida:'badge-red',
+                   ajuste:'badge-orange', venta:'badge-blue',
+                   devolucion:'badge-purple', compra:'badge-green' };
+
+  tb.innerHTML = lista.slice(0, 500).map(m => `
+    <tr>
+      <td>${fmtFecha(m.fechaHora)}</td>
+      <td><span class="badge ${badges[m.tipo]||'badge-gray'}">${(m.tipo||'').toUpperCase()}</span></td>
+      <td><strong>${m.codigo||'-'}</strong></td>
+      <td>${m.producto||'-'}</td>
+      <td>${m.cantidad||0}</td>
+      <td>${m.stockAntes!==undefined?m.stockAntes:'-'}</td>
+      <td>${m.stockDespues!==undefined?m.stockDespues:'-'}</td>
+      <td>${m.motivo||''}<br><small style="color:#7f8c8d;">
+        ${m.usuarioNombre||m.usuario||''}</small></td>
+    </tr>`).join('');
+}
+
+function exportarMovExcel(){
+  if(STATE.movimientos.length === 0){ toast('Sin movimientos', 'warning'); return; }
+  const data = STATE.movimientos.map(m => ({
+    Fecha: m.fechaHora, Tipo: m.tipo, Codigo: m.codigo||'',
+    Producto: m.producto||'', Cantidad: m.cantidad||0,
+    Stock_Antes: m.stockAntes||'', Stock_Despues: m.stockDespues||'',
+    Motivo: m.motivo||'', Usuario: m.usuarioNombre||m.usuario||''
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Movimientos');
+  XLSX.writeFile(wb, `movimientos-${hoyFecha()}.xlsx`);
+  toast('Excel exportado', 'success');
+}
+
+function exportarMovPDF(){
+  if(STATE.movimientos.length === 0){ toast('Sin movimientos', 'warning'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('landscape');
+  doc.setFontSize(16);
+  doc.text('Movimientos / Kardex', 14, 15);
+  doc.setFontSize(10);
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, 14, 22);
+  const td = STATE.movimientos.slice(0, 200).map(m => [
+    fmtFecha(m.fechaHora), m.tipo, m.codigo||'', m.producto||'',
+    m.cantidad||0, m.stockAntes!==undefined?m.stockAntes:'',
+    m.stockDespues!==undefined?m.stockDespues:'',
+    (m.motivo||'').substring(0,40)
+  ]);
+  doc.autoTable({
+    head: [['Fecha','Tipo','Código','Producto','Cant','Antes','Después','Motivo']],
+    body: td, startY: 28, headStyles: {fillColor: [26,26,26]},
+    styles: {fontSize: 7}
+  });
+  doc.save(`movimientos-${hoyFecha()}.pdf`);
+  toast('PDF exportado', 'success');
+}
+
+function renderConfiguracion(main){
+  if(STATE.user.rol !== 'admin'){
+    main.innerHTML = '<div class="section active"><div class="empty-state">' +
+      '<i class="fas fa-lock"></i>Solo administradores</div></div>';
+    return;
+  }
+  const c = STATE.config;
+  const ultimaSync = FB.ultimaSync ? fmtFecha(FB.ultimaSync.toISOString()) : '--';
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-gear"></i> Configuración</h2>
+
+    <div class="info-box">
+      <strong><i class="fas fa-info-circle"></i> Modo nube:</strong>
+      los datos se sincronizan con Firebase en tiempo real. Todas las PCs
+      ven los mismos datos al instante.
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label><i class="fas fa-dollar-sign"></i> Tasa BCV (Bs por $) *</label>
+        <input type="number" id="cfgTasa" step="0.01" min="0" value="${c.tasaBCV}">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-percent"></i> Margen por defecto (%)</label>
+        <input type="number" id="cfgMargen" step="1" min="0" value="${c.margenDefault}">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-receipt"></i> IVA (%)</label>
+        <input type="number" id="cfgIva" step="1" min="0" value="${c.iva}">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-boxes"></i> Stock mínimo por defecto</label>
+        <input type="number" id="cfgStockMin" step="1" min="1" value="${c.stockMinDefault}">
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;">Datos de la Empresa</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre / Razón social</label>
+        <input type="text" id="cfgEmpresa" value="${c.empresa||''}"></div>
+      <div class="form-group"><label>RIF</label>
+        <input type="text" id="cfgRif" value="${c.rif||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Teléfono</label>
+        <input type="text" id="cfgTel" value="${c.telefono||''}"></div>
+      <div class="form-group full"><label>Dirección</label>
+        <input type="text" id="cfgDir" value="${c.direccion||''}"></div>
+    </div>
+
+    <div class="form-row" style="margin-top:20px;">
+      <button class="btn btn-success" onclick="saveConfig()">
+        <i class="fas fa-save"></i> Guardar Configuración</button>
+    </div>
+
+    <h3 style="margin:30px 0 10px;color:#1a1a1a;font-size:1rem;">
+      <i class="fas fa-cloud"></i> Sincronización con la Nube</h3>
+    <div class="info-box">
+      <strong>Estado:</strong> ${FB.activo ? '<span style="color:#2d8a5c;">Conectado</span>' : '<span style="color:#c0392b;">Desconectado</span>'}<br>
+      <small>Proyecto: ${FIREBASE_CONFIG.projectId}</small><br>
+      <small>Última sincronización: ${ultimaSync}</small>
+    </div>
+    <div class="form-row">
+      <button class="btn btn-success" onclick="forzarSincronizacion()">
+        <i class="fas fa-sync"></i> Sincronizar Ahora</button>
+      <button class="btn btn-primary" onclick="subirTodoANube()">
+        <i class="fas fa-cloud-upload-alt"></i> Subir todo a la nube</button>
+      <button class="btn btn-warning" onclick="bajarTodoDeNube()">
+        <i class="fas fa-cloud-download-alt"></i> Bajar todo de la nube</button>
+    </div>
+
+    <h3 style="margin:30px 0 10px;color:#1a1a1a;font-size:1rem;">
+      <i class="fas fa-database"></i> Backup y Restauración</h3>
+    <div class="warn-box">
+      <p style="margin-bottom:10px;">Backup adicional en archivo JSON.
+      Útil para respaldos externos.</p>
+      <button class="btn btn-warning" onclick="exportarBackup()">
+        <i class="fas fa-download"></i> Exportar backup (JSON)</button>
+      <button class="btn btn-primary" onclick="document.getElementById('fileImp').click()">
+        <i class="fas fa-upload"></i> Importar backup</button>
+      <input type="file" id="fileImp" accept=".json" style="display:none"
+             onchange="importarBackup(event)">
+      <button class="btn btn-danger" onclick="confirmarBorrarTodo()"
+              style="margin-left:10px;">
+        <i class="fas fa-trash"></i> Borrar TODOS los datos</button>
+    </div>
+
+    <div class="info-box" style="margin-top:20px;">
+      <strong>Estadísticas:</strong>
+      Productos: ${STATE.productos.length} |
+      Movimientos: ${STATE.movimientos.length} |
+      Ventas: ${STATE.ventas.length} |
+      Clientes: ${STATE.clientes.length} |
+      Compras: ${STATE.compras.length} |
+      Usuarios: ${STATE.usuarios.length}
+    </div>
+  </div>`;
+}
+
+function saveConfig(){
+  STATE.config = {
+    tasaBCV: parseFloat(document.getElementById('cfgTasa').value)||36.50,
+    margenDefault: parseFloat(document.getElementById('cfgMargen').value)||40,
+    iva: parseFloat(document.getElementById('cfgIva').value)||16,
+    stockMinDefault: parseInt(document.getElementById('cfgStockMin').value)||3,
+    empresa: document.getElementById('cfgEmpresa').value.trim(),
+    rif: document.getElementById('cfgRif').value.trim(),
+    telefono: document.getElementById('cfgTel').value.trim(),
+    direccion: document.getElementById('cfgDir').value.trim()
+  };
+  const hoy = hoyFecha();
+  const idx = STATE.tasas.findIndex(t => t.fecha === hoy);
+  if(idx >= 0) STATE.tasas[idx].valor = STATE.config.tasaBCV;
+  else STATE.tasas.push({fecha: hoy, valor: STATE.config.tasaBCV});
+
+  guardarTodo();
+  document.getElementById('topTasa').textContent = STATE.config.tasaBCV.toFixed(2);
+  toast('Configuración guardada', 'success');
+}
+
+function exportarBackup(){
+  const data = {
+    exportadoEn: hoyISO(), version: 'v1',
+    usuarios: STATE.usuarios, productos: STATE.productos,
+    movimientos: STATE.movimientos, ventas: STATE.ventas,
+    devoluciones: STATE.devoluciones, clientes: STATE.clientes,
+    compras: STATE.compras, tasas: STATE.tasas, config: STATE.config
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `joj-backup-${hoyFecha()}.json`;
+  a.click();
+  toast('Backup descargado', 'success');
+}
+
+function importarBackup(evt){
+  const f = evt.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = (e) => {
+    try {
+      const d = JSON.parse(e.target.result);
+      document.getElementById('confirmText').innerHTML =
+        `¿Reemplazar TODOS los datos actuales con el backup?<br><br>
+         Productos: <strong>${(d.productos||[]).length}</strong><br>
+         Ventas: <strong>${(d.ventas||[]).length}</strong><br>
+         Usuarios: <strong>${(d.usuarios||[]).length}</strong>`;
+      document.getElementById('confirmBtn').onclick = () => {
+        desempacarDatos(d);
+        guardarTodo();
+        closeModal('modalConfirm');
+        toast('Backup importado. Recargando...', 'success');
+        setTimeout(() => location.reload(), 1200);
+      };
+      openModal('modalConfirm');
+    } catch(err){
+      toast('Archivo inválido', 'error');
+    }
+  };
+  r.readAsText(f);
+}
+
+function confirmarBorrarTodo(){
+  document.getElementById('confirmText').innerHTML =
+    `<strong style="color:#c0392b;">ADVERTENCIA</strong><br><br>
+     Esto borrará TODOS los datos: productos, ventas, usuarios, etc.
+     <br><br>¿Estás seguro?`;
+  document.getElementById('confirmBtn').onclick = async () => {
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem('joj_user');
+    // Borrar también en la nube
+    if(FB.activo && FB.db){
+      try {
+        await FB.db.collection(FIRESTORE_DOC_PATH.coleccion)
+          .doc(FIRESTORE_DOC_PATH.documento)
+          .set({ usuarios: [], productos: [], movimientos: [],
+                 ventas: [], devoluciones: [], clientes: [],
+                 compras: [], tasas: [], config: STATE.config,
+                 _savedAt: hoyISO(), _savedBy: 'borrado' });
+      } catch(e){ console.error(e); }
+    }
+    setTimeout(() => location.reload(), 800);
+  };
+  openModal('modalConfirm');
+}
+
+/* ================================================================
+   SUBIR / BAJAR MANUAL A LA NUBE
+   ================================================================ */
+async function subirTodoANube(){
+  if(!FB.activo){ toast('Firebase no está conectado', 'error'); return; }
+  document.getElementById('confirmText').innerHTML =
+    `¿Subir TODOS los datos locales a la nube?<br>
+     <small style="color:#c0392b;">Esto SOBRESCRIBIRÁ los datos actuales en Firestore.</small><br><br>
+     Productos: <strong>${STATE.productos.length}</strong><br>
+     Ventas: <strong>${STATE.ventas.length}</strong>`;
+  document.getElementById('confirmBtn').onclick = async () => {
+    showLoader(true, 'Subiendo a la nube...');
+    try {
+      FB.guardando = false;
+      await guardarTodo();
+      closeModal('modalConfirm');
+      toast('Datos subidos a la nube', 'success');
+      updateSyncIndicator('ok');
+      renderSection('configuracion');
+    } catch(e){
+      toast('Error al subir: ' + e.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+  openModal('modalConfirm');
+}
+
+async function bajarTodoDeNube(){
+  if(!FB.activo){ toast('Firebase no está conectado', 'error'); return; }
+  document.getElementById('confirmText').innerHTML =
+    `¿Bajar TODOS los datos desde la nube?<br>
+     <small style="color:#c0392b;">Esto SOBRESCRIBIRÁ los datos locales actuales.</small>`;
+  document.getElementById('confirmBtn').onclick = async () => {
+    showLoader(true, 'Bajando de la nube...');
+    try {
+      const ref = FB.db.collection(FIRESTORE_DOC_PATH.coleccion)
+        .doc(FIRESTORE_DOC_PATH.documento);
+      const snap = await ref.get();
+      if(snap.exists){
+        desempacarDatos(snap.data());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.data()));
+        closeModal('modalConfirm');
+        toast('Datos descargados. Recargando...', 'success');
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        toast('No hay datos en la nube', 'warning');
+      }
+    } catch(e){
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+  openModal('modalConfirm');
+}
+
+/* ================================================================
+   PLACEHOLDERS — se sobreescriben en el Bloque 2
+   ================================================================ */
+function renderVentas(m){ m.innerHTML = placeholder('Ventas','Pega el Bloque 2 a continuación'); }
+function renderDevoluciones(m){ m.innerHTML = placeholder('Devoluciones','Pega el Bloque 2 a continuación'); }
+function renderClientes(m){ m.innerHTML = placeholder('Clientes / Fiado','Pega el Bloque 2 a continuación'); }
+function renderCompras(m){ m.innerHTML = placeholder('Compras a Proveedor','Pega el Bloque 2 a continuación'); }
+function renderReportes(m){ m.innerHTML = placeholder('Reportes','Pega el Bloque 2 a continuación'); }
+function placeholder(titulo, nota){
+  return `<div class="section active">
+    <h2 class="page-title"><i class="fas fa-cube"></i> ${titulo}</h2>
+    <div class="empty-state"><i class="fas fa-hourglass-half"></i>
+      <p>${nota}</p></div>
+  </div>`;
+}
+
+/* ================================================================
+   ARRANQUE
+   ================================================================ */
+window.addEventListener('DOMContentLoaded', async () => {
+  // 1. Inicializar Firebase primero
+  initFirebase();
+
+  // 2. Cargar datos (de Firestore si está disponible, sino de localStorage)
+  await cargarTodo();
+
+  // 3. Crear admin si no existe
+  bootstrapAdmin();
+
+  // 4. Activar sincronización en tiempo real
+  if(FB.activo){
+    iniciarSyncTiempoReal();
+    updateSyncIndicator('ok');
+  } else {
+    updateSyncIndicator('offline');
+  }
+
+  // 5. Verificar sesión previa
+  const raw = sessionStorage.getItem('joj_user');
+  if(raw){
+    try {
+      STATE.user = JSON.parse(raw);
+      enterApp();
+      return;
+    } catch(e){ console.warn(e); }
+  }
+
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').focus();
+});
+
+/* ================================================================
+   BLOQUE 2: VENTAS + DEVOLUCIONES + CLIENTES + COMPRAS + REPORTES
+   ================================================================ */
+
+function getProductoById(id){ return STATE.productos.find(p => p.id === id); }
+
+function sumarStock(productoId, cantidad){
+  const p = getProductoById(productoId);
+  if(!p) return false;
+  const antes = parseFloat(p.stock)||0;
+  p.stock = antes + cantidad;
+  p.updatedAt = hoyISO();
+  return { antes, despues: p.stock };
+}
+
+function restarStock(productoId, cantidad){
+  const p = getProductoById(productoId);
+  if(!p) return false;
+  const antes = parseFloat(p.stock)||0;
+  if(cantidad > antes) return false;
+  p.stock = antes - cantidad;
+  p.updatedAt = hoyISO();
+  return { antes, despues: p.stock };
+}
+
+function registrarMovimiento(opts){
+  STATE.movimientos.push({
+    id: uid('mov'),
+    fechaHora: opts.fechaHora || hoyISO(),
+    tipo: opts.tipo,
+    productoId: opts.productoId,
+    producto: opts.producto,
+    codigo: opts.codigo,
+    cantidad: opts.cantidad,
+    stockAntes: opts.stockAntes,
+    stockDespues: opts.stockDespues,
+    motivo: opts.motivo || '',
+    usuario: STATE.user.usuario,
+    usuarioNombre: STATE.user.nombre,
+    referencia: opts.referencia || ''
+  });
+}
+
+function calcularTotales(items, aplicarIva){
+  const subtotal = items.reduce((s,it) =>
+    s + (parseFloat(it.cantidad)||0) * (parseFloat(it.precioUnitUSD)||0), 0);
+  const iva = aplicarIva ? subtotal * ((parseFloat(STATE.config.iva)||0)/100) : 0;
+  return { subtotal, iva, total: subtotal + iva };
+}
+
+/* ============ VENTAS ============ */
+let carritoVenta = [];
+
+function renderVentas(main){
+  carritoVenta = [];
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-cash-register"></i> Nueva Venta</h2>
+
+    <div class="info-box" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <span><strong>Tasa BCV:</strong> ${tasa.toFixed(2)} Bs/$</span>
+      <span><strong>IVA:</strong> ${STATE.config.iva}%</span>
+      <span><strong>Vendedor:</strong> ${STATE.user.nombre}</span>
+    </div>
+
+    <div class="flex-split">
+      <div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Buscar producto por código o nombre</label>
+            <input type="text" id="ventaBusca" placeholder="Escriba para buscar..."
+                   oninput="buscarProductoVenta()" autocomplete="off">
+          </div>
+        </div>
+        <div id="ventaResultados" class="preview-table" style="max-height:250px;display:none;"></div>
+
+        <h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1.05rem;">
+          <i class="fas fa-shopping-cart" style="color:#e85a1a;"></i> Carrito</h3>
+        <div class="table-wrap" style="max-height:350px;">
+          <table>
+            <thead><tr>
+              <th>Producto</th><th>Precio USD</th><th>Cantidad</th>
+              <th>Subtotal</th><th></th>
+            </tr></thead>
+            <tbody id="tbodyCarrito">
+              <tr><td colspan="5" class="empty-state">
+                <i class="fas fa-shopping-basket"></i>Carrito vacío</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cliente</label>
+            <input type="text" id="ventaCliente" placeholder="Nombre o cédula"
+                   list="listaClientesVenta">
+            <datalist id="listaClientesVenta">
+              ${STATE.clientes.map(c => `<option value="${c.nombre}">`).join('')}
+            </datalist>
+          </div>
+        </div>
+
+        <h3 style="margin:15px 0 10px;color:#1a1a1a;font-size:1rem;">
+          <i class="fas fa-calculator" style="color:#e85a1a;"></i> Totales</h3>
+        <div style="background:white;padding:15px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <div class="iva-row"><span>Subtotal USD:</span>
+            <strong id="vSubtotal">$0.00</strong></div>
+          <div class="iva-row"><span>IVA (${STATE.config.iva}%):</span>
+            <strong id="vIva">$0.00</strong></div>
+          <div class="iva-row total"><span>TOTAL USD:</span>
+            <strong id="vTotalUSD">$0.00</strong></div>
+          <div class="iva-row total" style="border-top:none;font-size:1rem;color:#2d8a5c;">
+            <span>TOTAL Bs:</span>
+            <strong id="vTotalBs">Bs 0,00</strong>
+          </div>
+        </div>
+
+        <h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;">
+          <i class="fas fa-money-bill-wave" style="color:#e85a1a;"></i> Pago</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Moneda de pago *</label>
+            <select id="vMoneda">
+              <option value="USD">Dólares (USD)</option>
+              <option value="Bs">Bolívares (Bs)</option>
+              <option value="Mixto">Mixto (USD + Bs)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Método *</label>
+            <select id="vMetodo">
+              <option>Efectivo</option>
+              <option>Pago móvil</option>
+              <option>Transferencia</option>
+              <option>Punto de venta</option>
+              <option>Zelle</option>
+              <option>Binance USDT</option>
+              <option>Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Referencia / Notas</label>
+            <input type="text" id="vReferencia" placeholder="Nº operación">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Aplicar IVA</label>
+            <select id="vAplicaIva" onchange="actualizarTotalesVenta()">
+              <option value="si">Sí (${STATE.config.iva}%)</option>
+              <option value="no">No (exento)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top:15px;">
+          <button class="btn btn-success" onclick="registrarVenta()"
+                  style="width:100%;justify-content:center;">
+            <i class="fas fa-check-circle"></i> REGISTRAR VENTA</button>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-secondary" onclick="limpiarCarrito()"
+                  style="width:100%;justify-content:center;">
+            <i class="fas fa-times"></i> Vaciar carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buscarProductoVenta(){
+  const q = document.getElementById('ventaBusca').value.trim().toLowerCase();
+  const cont = document.getElementById('ventaResultados');
+  if(!q){ cont.style.display = 'none'; return; }
+
+  const matches = STATE.productos.filter(p =>
+    (p.codigo||'').toLowerCase().includes(q) ||
+    (p.nombre||'').toLowerCase().includes(q)
+  ).slice(0, 12);
+
+  if(matches.length === 0){
+    cont.innerHTML = '<div style="padding:10px;color:#7f8c8d;">Sin resultados</div>';
+    cont.style.display = 'block';
+    return;
+  }
+
+  cont.innerHTML = `<table>
+    <thead><tr><th>Código</th><th>Producto</th><th>Stock</th><th>Precio $</th><th></th></tr></thead>
+    <tbody>
+      ${matches.map(p => `
+        <tr>
+          <td><strong>${p.codigo}</strong></td>
+          <td>${p.nombre}</td>
+          <td>${p.stock||0}</td>
+          <td>${fmtUSD(p.precioVentaUSD)}</td>
+          <td><button class="btn btn-sm btn-success"
+              onclick="agregarAlCarrito('${p.id}')">
+              <i class="fas fa-plus"></i></button></td>
+        </tr>`).join('')}
+    </tbody></table>`;
+  cont.style.display = 'block';
+}
+
+function agregarAlCarrito(id){
+  const p = getProductoById(id);
+  if(!p) return;
+  if((parseFloat(p.stock)||0) <= 0){
+    toast('Producto sin stock', 'error');
+    return;
+  }
+  const existe = carritoVenta.find(it => it.productoId === id);
+  if(existe){
+    if(existe.cantidad + 1 > (parseFloat(p.stock)||0)){
+      toast('Stock insuficiente', 'warning');
+      return;
+    }
+    existe.cantidad++;
+  } else {
+    carritoVenta.push({
+      productoId: id,
+      codigo: p.codigo,
+      descripcion: p.nombre,
+      precioUnitUSD: parseFloat(p.precioVentaUSD)||0,
+      cantidad: 1,
+      stockDisponible: parseFloat(p.stock)||0
+    });
+  }
+  document.getElementById('ventaBusca').value = '';
+  document.getElementById('ventaResultados').style.display = 'none';
+  renderCarrito();
+}
+
+function renderCarrito(){
+  const tb = document.getElementById('tbodyCarrito');
+  if(carritoVenta.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" class="empty-state">' +
+      '<i class="fas fa-shopping-basket"></i>Carrito vacío</td></tr>';
+    actualizarTotalesVenta();
+    return;
+  }
+  tb.innerHTML = carritoVenta.map((it, idx) => `
+    <tr>
+      <td><strong>${it.codigo}</strong><br><small>${it.descripcion}</small></td>
+      <td>${fmtUSD(it.precioUnitUSD)}</td>
+      <td><input type="number" class="qty-input" value="${it.cantidad}"
+           min="1" max="${it.stockDisponible}"
+           onchange="cambiarCantidad(${idx}, this.value)"></td>
+      <td><strong>${fmtUSD(it.cantidad * it.precioUnitUSD)}</strong></td>
+      <td><button class="btn btn-sm btn-danger"
+           onclick="quitarDelCarrito(${idx})">
+           <i class="fas fa-times"></i></button></td>
+    </tr>`).join('');
+  actualizarTotalesVenta();
+}
+
+function cambiarCantidad(idx, val){
+  const c = parseInt(val)||1;
+  const it = carritoVenta[idx];
+  if(c > it.stockDisponible){
+    toast('Solo hay ' + it.stockDisponible + ' disponibles', 'warning');
+    it.cantidad = it.stockDisponible;
+  } else if(c < 1){
+    it.cantidad = 1;
+  } else {
+    it.cantidad = c;
+  }
+  renderCarrito();
+}
+
+function quitarDelCarrito(idx){
+  carritoVenta.splice(idx, 1);
+  renderCarrito();
+}
+
+function limpiarCarrito(){
+  carritoVenta = [];
+  const c = document.getElementById('ventaCliente');
+  const r = document.getElementById('vReferencia');
+  if(c) c.value = '';
+  if(r) r.value = '';
+  renderCarrito();
+}
+
+function actualizarTotalesVenta(){
+  const aplica = document.getElementById('vAplicaIva')?.value !== 'no';
+  const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica);
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  if(document.getElementById('vSubtotal')){
+    document.getElementById('vSubtotal').textContent = fmtUSD(subtotal);
+    document.getElementById('vIva').textContent = fmtUSD(iva);
+    document.getElementById('vTotalUSD').textContent = fmtUSD(total);
+    document.getElementById('vTotalBs').textContent = fmtBs(total * tasa);
+  }
+}
+
+function registrarVenta(){
+  if(carritoVenta.length === 0){
+    toast('Agrega productos al carrito', 'warning'); return;
+  }
+  const cliente = document.getElementById('ventaCliente').value.trim() || 'Cliente ocasional';
+  const moneda = document.getElementById('vMoneda').value;
+  const metodo = document.getElementById('vMetodo').value;
+  const referencia = document.getElementById('vReferencia').value.trim();
+  const aplica = document.getElementById('vAplicaIva').value === 'si';
+
+  for(const it of carritoVenta){
+    const p = getProductoById(it.productoId);
+    if(!p || (parseFloat(p.stock)||0) < it.cantidad){
+      toast(`Stock insuficiente: ${it.descripcion}`, 'error'); return;
+    }
+  }
+
+  const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica);
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  const totalBs = total * tasa;
+
+  const venta = {
+    id: uid('vta'),
+    fechaHora: hoyISO(),
+    cliente,
+    vendedor: STATE.user.usuario,
+    vendedorNombre: STATE.user.nombre,
+    items: [...carritoVenta],
+    subtotalUSD: subtotal,
+    ivaUSD: iva,
+    totalUSD: total,
+    tasaBCV: tasa,
+    totalBs: totalBs,
+    monedaPago: moneda,
+    metodoPago: metodo,
+    referencia,
+    aplicoIva: aplica
+  };
+
+  carritoVenta.forEach(it => {
+    const r = restarStock(it.productoId, it.cantidad);
+    if(r){
+      registrarMovimiento({
+        tipo: 'venta',
+        productoId: it.productoId,
+        producto: it.descripcion,
+        codigo: it.codigo,
+        cantidad: it.cantidad,
+        stockAntes: r.antes,
+        stockDespues: r.despues,
+        motivo: `Venta a ${cliente}`,
+        referencia: venta.id
+      });
+    }
+  });
+
+  STATE.ventas.push(venta);
+  guardarTodo();
+  toast(`Venta registrada: ${fmtUSD(total)} / ${fmtBs(totalBs)}`, 'success');
+
+  setTimeout(() => {
+    if(confirm('¿Deseas imprimir el ticket de venta?')){
+      imprimirTicketVenta(venta.id);
+    }
+    renderSection('ventas');
+  }, 400);
+}
+
+function imprimirTicketVenta(ventaId){
+  const v = STATE.ventas.find(x => x.id === ventaId);
+  if(!v) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({format: [80, 200], unit: 'mm'});
+  doc.setFontSize(8);
+  doc.text('INVERSIONES JOJ SOLUTION 2025 C.A.', 40, 6, {align:'center'});
+  doc.setFontSize(6);
+  doc.text('RIF: J-509112580', 40, 11, {align:'center'});
+  doc.text(`Fecha: ${fmtFecha(v.fechaHora)}`, 5, 18);
+  doc.text(`Cliente: ${v.cliente}`, 5, 22);
+  doc.text(`Vendedor: ${v.vendedorNombre}`, 5, 26);
+  doc.text('--------------------------------', 5, 30);
+  let y = 34;
+  v.items.forEach(it => {
+    doc.text(it.descripcion.substring(0,30), 5, y);
+    doc.text(`${it.cantidad} x ${fmtUSD(it.precioUnitUSD)} = ${fmtUSD(it.cantidad*it.precioUnitUSD)}`,
+             5, y+3);
+    y += 7;
+  });
+  doc.text('--------------------------------', 5, y); y += 4;
+  doc.text(`Subtotal: ${fmtUSD(v.subtotalUSD)}`, 5, y); y += 4;
+  if(v.aplicoIva) { doc.text(`IVA: ${fmtUSD(v.ivaUSD)}`, 5, y); y += 4; }
+  doc.setFontSize(9);
+  doc.text(`TOTAL USD: ${fmtUSD(v.totalUSD)}`, 5, y); y += 5;
+  doc.text(`TOTAL Bs: ${fmtBs(v.totalBs)}`, 5, y); y += 5;
+  doc.setFontSize(6);
+  doc.text(`Tasa BCV: ${v.tasaBCV.toFixed(2)}`, 5, y); y += 4;
+  doc.text(`Pago: ${v.metodoPago}`, 5, y); y += 4;
+  if(v.referencia){ doc.text(`Ref: ${v.referencia}`, 5, y); y += 4; }
+  doc.text('Gracias por su compra', 40, y+6, {align:'center'});
+  doc.save(`ticket-${ventaId}.pdf`);
+}
+
+/* ============ DEVOLUCIONES ============ */
+function renderDevoluciones(main){
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-rotate-left"></i> Devoluciones</h2>
+
+    <div class="info-box">
+      Registra devoluciones totales o parciales. Puedes reintegrar
+      el stock al inventario y registrar el reembolso.
+    </div>
+
+    <div class="form-row">
+      <div class="form-group full">
+        <label>Buscar venta original (por cliente)</label>
+        <input type="text" id="devBusca" placeholder="Nombre del cliente..."
+               oninput="buscarVentaDevol()">
+      </div>
+    </div>
+
+    <div id="devResultados"></div>
+
+    <h3 style="margin:30px 0 10px;color:#1a1a1a;font-size:1.05rem;">
+      <i class="fas fa-list" style="color:#e85a1a;"></i> Historial de Devoluciones</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Venta Original</th><th>Cliente</th>
+          <th>Items Devueltos</th><th>Monto Devuelto</th><th>Moneda</th>
+          <th>Motivo</th><th>Usuario</th>
+        </tr></thead>
+        <tbody id="tbodyDevoluciones"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  renderTablaDevoluciones();
+}
+
+function buscarVentaDevol(){
+  const q = document.getElementById('devBusca').value.trim().toLowerCase();
+  const cont = document.getElementById('devResultados');
+  if(!q){ cont.innerHTML = ''; return; }
+
+  const matches = [...STATE.ventas]
+    .filter(v => (v.cliente||'').toLowerCase().includes(q))
+    .sort((a,b) => new Date(b.fechaHora) - new Date(a.fechaHora))
+    .slice(0, 20);
+
+  if(matches.length === 0){
+    cont.innerHTML = '<div class="info-box">Sin ventas para ese cliente</div>';
+    return;
+  }
+
+  cont.innerHTML = `<div class="preview-table">
+    <table>
+      <thead><tr><th>Fecha</th><th>Cliente</th><th>Total</th>
+        <th>Productos</th><th></th></tr></thead>
+      <tbody>
+        ${matches.map(v => `
+          <tr>
+            <td>${fmtFecha(v.fechaHora)}</td>
+            <td>${v.cliente}</td>
+            <td>${fmtUSD(v.totalUSD)}</td>
+            <td>${v.items.length} item(s)</td>
+            <td><button class="btn btn-sm btn-warning"
+                 onclick="openDevolucion('${v.id}')">
+                 <i class="fas fa-rotate-left"></i> Devolver</button></td>
+          </tr>`).join('')}
+      </tbody></table></div>`;
+}
+
+function renderTablaDevoluciones(){
+  const tb = document.getElementById('tbodyDevoluciones');
+  if(!tb) return;
+  if(STATE.devoluciones.length === 0){
+    tb.innerHTML = '<tr><td colspan="8" class="empty-state">' +
+      '<i class="fas fa-inbox"></i>Sin devoluciones</td></tr>';
+    return;
+  }
+  const lista = [...STATE.devoluciones]
+    .sort((a,b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+  tb.innerHTML = lista.map(d => `
+    <tr>
+      <td>${fmtFecha(d.fechaHora)}</td>
+      <td><small>${(d.ventaOriginalId||'').substring(0,15)}...</small></td>
+      <td>${d.cliente||'-'}</td>
+      <td>${(d.items||[]).map(it => `${it.cantidad}x ${it.descripcion}`).join(', ')}</td>
+      <td><strong>${fmtUSD(d.montoDevueltoUSD)}</strong></td>
+      <td>${d.monedaReembolso||'-'}</td>
+      <td>${d.motivo||'-'}</td>
+      <td>${d.usuarioNombre||'-'}</td>
+    </tr>`).join('');
+}
+
+function openDevolucion(ventaId){
+  const v = STATE.ventas.find(x => x.id === ventaId);
+  if(!v) return;
+
+  document.getElementById('modalProductoTitle').textContent =
+    'Devolución — Venta del ' + fmtFecha(v.fechaHora);
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="info-box">
+      <strong>Cliente:</strong> ${v.cliente}<br>
+      <strong>Total original:</strong> ${fmtUSD(v.totalUSD)} |
+      <strong>Tasa:</strong> ${v.tasaBCV.toFixed(2)} Bs/$
+    </div>
+
+    <h3 style="margin:15px 0 10px;font-size:1rem;">Selecciona qué devolver:</h3>
+    <div class="table-wrap" style="max-height:300px;">
+      <table>
+        <thead><tr><th>☑</th><th>Producto</th><th>Cant. comprada</th>
+          <th>Cant. a devolver</th><th>Precio</th><th>Subtotal</th></tr></thead>
+        <tbody id="tbodyDevItems">
+          ${v.items.map((it, idx) => `
+            <tr>
+              <td><input type="checkbox" class="devChk" data-idx="${idx}"
+                   onchange="toggleDevItem(${idx})"></td>
+              <td><strong>${it.codigo}</strong><br><small>${it.descripcion}</small></td>
+              <td>${it.cantidad}</td>
+              <td><input type="number" class="devCant qty-input" data-idx="${idx}"
+                   min="0" max="${it.cantidad}" value="0" disabled
+                   onchange="recalcDevolucion('${ventaId}')"></td>
+              <td>${fmtUSD(it.precioUnitUSD)}</td>
+              <td class="devSubtotal" data-idx="${idx}">$0.00</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" style="margin-top:15px;">
+      <strong>Total a devolver:</strong>
+      <span id="devTotalUSD" style="font-size:1.3rem;color:#c0392b;font-weight:700;">$0.00</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Motivo *</label>
+        <select id="devMotivo">
+          <option>Producto defectuoso</option>
+          <option>No era lo solicitado</option>
+          <option>Garantía</option>
+          <option>Error de venta</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Moneda del reembolso</label>
+        <select id="devMoneda">
+          <option value="USD">USD</option>
+          <option value="Bs">Bolívares</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Reintegrar stock al inventario</label>
+        <select id="devReintegrar">
+          <option value="si">Sí</option>
+          <option value="no">No (producto dañado)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <input type="text" id="devNotas" placeholder="Observaciones">
+      </div>
+    </div>
+
+    <div id="devMsg" class="login-msg"></div>
+
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarDevolucion('${ventaId}')">
+        <i class="fas fa-rotate-left"></i> Registrar Devolución</button>
+    </div>`;
+
+  openModal('modalProducto');
+}
+
+function toggleDevItem(idx){
+  const chk = document.querySelector(`.devChk[data-idx="${idx}"]`);
+  const inp = document.querySelector(`.devCant[data-idx="${idx}"]`);
+  if(chk.checked){
+    inp.disabled = false;
+    if(inp.value === '0') inp.value = inp.max;
+  } else {
+    inp.disabled = true;
+    inp.value = 0;
+  }
+}
+
+function recalcDevolucion(ventaId){
+  const v = STATE.ventas.find(x => x.id === ventaId);
+  if(!v) return;
+  let total = 0;
+  document.querySelectorAll('.devChk').forEach(chk => {
+    const idx = parseInt(chk.dataset.idx);
+    if(chk.checked){
+      const inp = document.querySelector(`.devCant[data-idx="${idx}"]`);
+      let cant = parseFloat(inp.value)||0;
+      if(cant > v.items[idx].cantidad){
+        cant = v.items[idx].cantidad;
+        inp.value = cant;
+      }
+      const sub = cant * v.items[idx].precioUnitUSD;
+      document.querySelector(`.devSubtotal[data-idx="${idx}"]`).textContent = fmtUSD(sub);
+      total += sub;
+    } else {
+      document.querySelector(`.devSubtotal[data-idx="${idx}"]`).textContent = '$0.00';
+    }
+  });
+  document.getElementById('devTotalUSD').textContent = fmtUSD(total);
+}
+
+function confirmarDevolucion(ventaId){
+  const v = STATE.ventas.find(x => x.id === ventaId);
+  if(!v) return;
+
+  const itemsDev = [];
+  document.querySelectorAll('.devChk').forEach(chk => {
+    if(chk.checked){
+      const idx = parseInt(chk.dataset.idx);
+      const cant = parseFloat(document.querySelector(`.devCant[data-idx="${idx}"]`).value)||0;
+      if(cant > 0){
+        itemsDev.push({
+          productoId: v.items[idx].productoId,
+          codigo: v.items[idx].codigo,
+          descripcion: v.items[idx].descripcion,
+          cantidad: cant,
+          precioUnitUSD: v.items[idx].precioUnitUSD
+        });
+      }
+    }
+  });
+
+  if(itemsDev.length === 0){
+    document.getElementById('devMsg').className = 'login-msg error';
+    document.getElementById('devMsg').textContent = 'Selecciona al menos un producto';
+    return;
+  }
+
+  const motivo = document.getElementById('devMotivo').value;
+  const moneda = document.getElementById('devMoneda').value;
+  const reintegrar = document.getElementById('devReintegrar').value === 'si';
+  const notas = document.getElementById('devNotas').value.trim();
+
+  const montoUSD = itemsDev.reduce((s,it) => s + (it.cantidad * it.precioUnitUSD), 0);
+  const tasa = v.tasaBCV || parseFloat(STATE.config.tasaBCV)||0;
+
+  const devolucion = {
+    id: uid('dev'),
+    fechaHora: hoyISO(),
+    ventaOriginalId: ventaId,
+    cliente: v.cliente,
+    items: itemsDev,
+    montoDevueltoUSD: montoUSD,
+    montoDevueltoBs: montoUSD * tasa,
+    tasaBCV: tasa,
+    monedaReembolso: moneda,
+    motivo, notas,
+    reintegroStock: reintegrar,
+    usuario: STATE.user.usuario,
+    usuarioNombre: STATE.user.nombre
+  };
+
+  if(reintegrar){
+    itemsDev.forEach(it => {
+      const r = sumarStock(it.productoId, it.cantidad);
+      if(r){
+        registrarMovimiento({
+          tipo: 'devolucion',
+          productoId: it.productoId,
+          producto: it.descripcion,
+          codigo: it.codigo,
+          cantidad: it.cantidad,
+          stockAntes: r.antes,
+          stockDespues: r.despues,
+          motivo: `Devolución: ${motivo}`,
+          referencia: devolucion.id
+        });
+      }
+    });
+  }
+
+  STATE.devoluciones.push(devolucion);
+  guardarTodo();
+  toast(`Devolución registrada: ${fmtUSD(montoUSD)}`, 'success');
+  closeModal('modalProducto');
+  renderTablaDevoluciones();
+  document.getElementById('devResultados').innerHTML = '';
+}
+
+/* ============ CLIENTES / FIADO ============ */
+function renderClientes(main){
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-users"></i> Clientes / Fiado</h2>
+
+    <div class="filters-bar">
+      <button class="btn btn-primary" onclick="openNuevoCliente()">
+        <i class="fas fa-plus"></i> Nuevo Cliente</button>
+      <input type="text" id="cliBusca" placeholder="Buscar cliente..."
+             oninput="renderTablaClientes()">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>Cédula/RIF</th><th>Teléfono</th>
+          <th>Saldo USD</th><th>Saldo Bs</th><th>Último abono</th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbodyClientes"></tbody>
+      </table>
+    </div>
+  </div>`;
+  renderTablaClientes();
+}
+
+function renderTablaClientes(){
+  const tb = document.getElementById('tbodyClientes');
+  if(!tb) return;
+  const f = (document.getElementById('cliBusca')?.value||'').toLowerCase();
+  const lista = STATE.clientes.filter(c =>
+    !f || (c.nombre||'').toLowerCase().includes(f) ||
+    (c.cedula||'').toLowerCase().includes(f));
+
+  if(lista.length === 0){
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state">' +
+      '<i class="fas fa-user-friends"></i>Sin clientes</td></tr>';
+    return;
+  }
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  tb.innerHTML = lista.map(c => {
+    const saldoUSD = parseFloat(c.saldoUSD)||0;
+    const ultimo = (c.abonos||[]).slice(-1)[0];
+    return `<tr>
+      <td><strong>${c.nombre}</strong></td>
+      <td>${c.cedula||'-'}</td>
+      <td>${c.telefono||'-'}</td>
+      <td><strong style="color:${saldoUSD>0?'#c0392b':'#2d8a5c'};">
+        ${fmtUSD(saldoUSD)}</strong></td>
+      <td>${fmtBs(saldoUSD * tasa)}</td>
+      <td>${ultimo ? fmtFecha(ultimo.fecha) : '-'}</td>
+      <td>
+        <button class="btn btn-sm btn-success" onclick="openAbono('${c.id}')">
+          <i class="fas fa-dollar-sign"></i> Abonar</button>
+        <button class="btn btn-sm btn-primary" onclick="openEditCliente('${c.id}')">
+          <i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelCliente('${c.id}')">
+          <i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openNuevoCliente(){
+  document.getElementById('modalProductoTitle').textContent = 'Nuevo Cliente';
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Nombre *</label>
+        <input type="text" id="cliNombre"></div>
+      <div class="form-group"><label>Cédula/RIF</label>
+        <input type="text" id="cliCedula"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Teléfono</label>
+        <input type="text" id="cliTelefono"></div>
+      <div class="form-group"><label>Dirección</label>
+        <input type="text" id="cliDireccion"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Saldo inicial (deuda USD)</label>
+        <input type="number" id="cliSaldo" step="0.01" value="0"></div>
+    </div>
+    <div id="cliMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCliente()">
+        <i class="fas fa-save"></i> Guardar</button>
+    </div>`;
+  document.getElementById('cliMsg').dataset.editId = '';
+  openModal('modalProducto');
+}
+
+function openEditCliente(id){
+  const c = STATE.clientes.find(x => x.id === id);
+  if(!c) return;
+  document.getElementById('modalProductoTitle').textContent = 'Editar Cliente';
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Nombre *</label>
+        <input type="text" id="cliNombre" value="${c.nombre||''}"></div>
+      <div class="form-group"><label>Cédula/RIF</label>
+        <input type="text" id="cliCedula" value="${c.cedula||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Teléfono</label>
+        <input type="text" id="cliTelefono" value="${c.telefono||''}"></div>
+      <div class="form-group"><label>Dirección</label>
+        <input type="text" id="cliDireccion" value="${c.direccion||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Saldo actual (deuda USD)</label>
+        <input type="number" id="cliSaldo" step="0.01" value="${c.saldoUSD||0}"></div>
+    </div>
+    <div id="cliMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCliente()">
+        <i class="fas fa-save"></i> Guardar</button>
+    </div>`;
+  document.getElementById('cliMsg').dataset.editId = id;
+  openModal('modalProducto');
+}
+
+function saveCliente(){
+  const editId = document.getElementById('cliMsg').dataset.editId;
+  const nombre = document.getElementById('cliNombre').value.trim();
+  const cedula = document.getElementById('cliCedula').value.trim();
+  const telefono = document.getElementById('cliTelefono').value.trim();
+  const direccion = document.getElementById('cliDireccion').value.trim();
+  const saldo = parseFloat(document.getElementById('cliSaldo').value)||0;
+  const msg = document.getElementById('cliMsg');
+
+  if(!nombre){ msg.className='login-msg error'; msg.textContent='Nombre obligatorio'; return; }
+
+  if(editId){
+    const c = STATE.clientes.find(x => x.id === editId);
+    if(!c) return;
+    Object.assign(c, {nombre, cedula, telefono, direccion, saldoUSD: saldo});
+    toast('Cliente actualizado', 'success');
+  } else {
+    STATE.clientes.push({
+      id: uid('cli'), nombre, cedula, telefono, direccion,
+      saldoUSD: saldo, abonos: [], createdAt: hoyISO()
+    });
+    toast('Cliente creado', 'success');
+  }
+  guardarTodo();
+  closeModal('modalProducto');
+  renderTablaClientes();
+}
+
+function openAbono(id){
+  const c = STATE.clientes.find(x => x.id === id);
+  if(!c) return;
+  const tasa = parseFloat(STATE.config.tasaBCV)||0;
+  document.getElementById('modalProductoTitle').textContent = 'Abono: ' + c.nombre;
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="info-box">
+      <strong>Saldo actual:</strong> ${fmtUSD(c.saldoUSD)} |
+      ${fmtBs(c.saldoUSD * tasa)}
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Monto del abono USD *</label>
+        <input type="number" id="abMonto" step="0.01" min="0" value="0"></div>
+      <div class="form-group"><label>Método</label>
+        <select id="abMetodo">
+          <option>Efectivo USD</option><option>Efectivo Bs</option>
+          <option>Pago móvil</option><option>Transferencia</option>
+          <option>Zelle</option><option>Binance</option>
+        </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full"><label>Notas</label>
+        <input type="text" id="abNotas"></div>
+    </div>
+    <div id="abMsg" class="login-msg"></div>
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-success" onclick="aplicarAbono('${id}')">
+        <i class="fas fa-check"></i> Aplicar Abono</button>
+    </div>`;
+  openModal('modalProducto');
+}
+
+function aplicarAbono(id){
+  const c = STATE.clientes.find(x => x.id === id);
+  if(!c) return;
+  const monto = parseFloat(document.getElementById('abMonto').value)||0;
+  const metodo = document.getElementById('abMetodo').value;
+  const notas = document.getElementById('abNotas').value.trim();
+  const msg = document.getElementById('abMsg');
+
+  if(monto <= 0){ msg.className='login-msg error'; msg.textContent='Monto mayor a 0'; return; }
+  if(monto > (c.saldoUSD||0) + 0.01){
+    msg.className='login-msg error'; msg.textContent='El abono supera el saldo'; return;
+  }
+
+  c.saldoUSD = (c.saldoUSD||0) - monto;
+  c.abonos = c.abonos || [];
+  c.abonos.push({
+    fecha: hoyISO(), montoUSD: monto, metodo, notas,
+    usuarioNombre: STATE.user.nombre
+  });
+  guardarTodo();
+  toast('Abono registrado', 'success');
+  closeModal('modalProducto');
+  renderTablaClientes();
+}
+
+function confirmDelCliente(id){
+  const c = STATE.clientes.find(x => x.id === id);
+  if(!c) return;
+  if((c.saldoUSD||0) > 0){
+    toast('Cliente con saldo pendiente. Cobre primero.', 'error');
+    return;
+  }
+  document.getElementById('confirmText').innerHTML =
+    `¿Eliminar a <strong>${c.nombre}</strong>?`;
+  document.getElementById('confirmBtn').onclick = () => {
+    STATE.clientes = STATE.clientes.filter(x => x.id !== id);
+    guardarTodo();
+    toast('Cliente eliminado', 'success');
+    closeModal('modalConfirm');
+    renderTablaClientes();
+  };
+  openModal('modalConfirm');
+}
+
+/* ============ COMPRAS ============ */
+let carritoCompra = [];
+
+function renderCompras(main){
+  carritoCompra = [];
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-truck"></i> Compras a Proveedor</h2>
+
+    <div class="info-box">
+      Registra pedidos a proveedores. Cuando llegue la mercancía,
+      marca el pedido como "Recibido" y el stock se actualizará.
+    </div>
+
+    <div class="filters-bar">
+      <button class="btn btn-primary" onclick="openNuevaCompra()">
+        <i class="fas fa-plus"></i> Nueva Compra</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Proveedor</th><th>Items</th>
+          <th>Total USD</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbodyCompras"></tbody>
+      </table>
+    </div>
+  </div>`;
+  renderTablaCompras();
+}
+
+function renderTablaCompras(){
+  const tb = document.getElementById('tbodyCompras');
+  if(!tb) return;
+  if(STATE.compras.length === 0){
+    tb.innerHTML = '<tr><td colspan="6" class="empty-state">' +
+      '<i class="fas fa-truck"></i>Sin compras registradas</td></tr>';
+    return;
+  }
+  const lista = [...STATE.compras].sort((a,b) =>
+    new Date(b.fechaHora) - new Date(a.fechaHora));
+  tb.innerHTML = lista.map(c => `
+    <tr>
+      <td>${fmtFecha(c.fechaHora)}</td>
+      <td>${c.proveedor||'-'}</td>
+      <td>${(c.items||[]).length} item(s)</td>
+      <td><strong>${fmtUSD(c.totalUSD)}</strong></td>
+      <td>${c.estado === 'recibido'
+        ? '<span class="badge badge-green">Recibido</span>'
+        : '<span class="badge badge-orange">Pendiente</span>'}</td>
+      <td>
+        ${c.estado !== 'recibido'
+          ? `<button class="btn btn-sm btn-success" onclick="marcarRecibido('${c.id}')">
+              <i class="fas fa-check"></i> Recibir</button>`
+          : ''}
+        <button class="btn btn-sm btn-danger" onclick="confirmDelCompra('${c.id}')">
+          <i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+function openNuevaCompra(){
+  document.getElementById('modalProductoTitle').textContent = 'Nueva Compra a Proveedor';
+  document.getElementById('modalProductoBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group">
+        <label>Proveedor *</label>
+        <input type="text" id="compProv" placeholder="Ej: AXMOTO" list="listaProv">
+        <datalist id="listaProv">
+          ${[...new Set(STATE.productos.map(p => p.proveedor).filter(Boolean))]
+            .map(p => `<option value="${p}">`).join('')}
+        </datalist>
+      </div>
+    </div>
+
+    <h3 style="margin:15px 0 10px;font-size:1rem;">Agregar productos</h3>
+    <div class="form-row">
+      <div class="form-group full">
+        <input type="text" id="compBusca" placeholder="Buscar por código o nombre..."
+               oninput="buscarProductoCompra()">
+      </div>
+    </div>
+    <div id="compResultados" class="preview-table" style="max-height:200px;display:none;"></div>
+
+    <div class="table-wrap" style="max-height:250px;margin-top:12px;">
+      <table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Costo USD</th>
+          <th>Subtotal</th><th></th></tr></thead>
+        <tbody id="tbodyCompraItems">
+          <tr><td colspan="5" class="empty-state">Sin items</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box" style="margin-top:12px;display:flex;justify-content:space-between;">
+      <strong>Total:</strong>
+      <span id="compTotal" style="font-size:1.2rem;color:#1a1a1a;">$0.00</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="compEstado">
+          <option value="pendiente">Pendiente (aún no llega)</option>
+          <option value="recibido">Recibido (sumar stock ahora)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <input type="text" id="compNotas">
+      </div>
+    </div>
+
+    <div id="compMsg" class="login-msg"></div>
+
+    <div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCompra()">
+        <i class="fas fa-save"></i> Registrar Compra</button>
+    </div>`;
+  carritoCompra = [];
+  openModal('modalProducto');
+}
+
+function buscarProductoCompra(){
+  const q = document.getElementById('compBusca').value.trim().toLowerCase();
+  const cont = document.getElementById('compResultados');
+  if(!q){ cont.style.display = 'none'; return; }
+  const matches = STATE.productos.filter(p =>
+    (p.codigo||'').toLowerCase().includes(q) ||
+    (p.nombre||'').toLowerCase().includes(q)
+  ).slice(0, 10);
+  if(matches.length === 0){ cont.style.display = 'none'; return; }
+  cont.innerHTML = `<table><tbody>
+    ${matches.map(p => `
+      <tr><td>${p.codigo}</td><td>${p.nombre}</td>
+        <td>${fmtUSD(p.precioCostoUSD)}</td>
+        <td><button class="btn btn-sm btn-success"
+          onclick="agregarCompraItem('${p.id}')">
+          <i class="fas fa-plus"></i></button></td></tr>`).join('')}
+  </tbody></table>`;
+  cont.style.display = 'block';
+}
+
+function agregarCompraItem(id){
+  const p = getProductoById(id);
+  if(!p) return;
+  if(carritoCompra.find(x => x.productoId === id)) return;
+  carritoCompra.push({
+    productoId: id, codigo: p.codigo, descripcion: p.nombre,
+    cantidad: 1, precioCostoUSD: parseFloat(p.precioCostoUSD)||0
+  });
+  document.getElementById('compBusca').value = '';
+  document.getElementById('compResultados').style.display = 'none';
+  renderCompraItems();
+}
+
+function renderCompraItems(){
+  const tb = document.getElementById('tbodyCompraItems');
+  if(carritoCompra.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" class="empty-state">Sin items</td></tr>';
+    document.getElementById('compTotal').textContent = '$0.00';
+    return;
+  }
+  tb.innerHTML = carritoCompra.map((it, idx) => `
+    <tr>
+      <td>${it.codigo}<br><small>${it.descripcion}</small></td>
+      <td><input type="number" class="qty-input" value="${it.cantidad}"
+           min="1" onchange="cambCompraCant(${idx}, this.value)"></td>
+      <td><input type="number" class="qty-input" value="${it.precioCostoUSD}"
+           step="0.01" min="0" onchange="cambCompraCosto(${idx}, this.value)"></td>
+      <td>${fmtUSD(it.cantidad * it.precioCostoUSD)}</td>
+      <td><button class="btn btn-sm btn-danger"
+          onclick="quitarCompraItem(${idx})">
+          <i class="fas fa-times"></i></button></td>
+    </tr>`).join('');
+  const total = carritoCompra.reduce((s,it) => s + it.cantidad * it.precioCostoUSD, 0);
+  document.getElementById('compTotal').textContent = fmtUSD(total);
+}
+
+function cambCompraCant(idx, v){
+  carritoCompra[idx].cantidad = parseInt(v)||1;
+  renderCompraItems();
+}
+function cambCompraCosto(idx, v){
+  carritoCompra[idx].precioCostoUSD = parseFloat(v)||0;
+  renderCompraItems();
+}
+function quitarCompraItem(idx){ carritoCompra.splice(idx,1); renderCompraItems(); }
+
+function saveCompra(){
+  const prov = document.getElementById('compProv').value.trim();
+  const estado = document.getElementById('compEstado').value;
+  const notas = document.getElementById('compNotas').value.trim();
+  const msg = document.getElementById('compMsg');
+
+  if(!prov){ msg.className='login-msg error'; msg.textContent='Proveedor obligatorio'; return; }
+  if(carritoCompra.length === 0){ msg.className='login-msg error';
+    msg.textContent='Agrega al menos un producto'; return; }
+
+  const total = carritoCompra.reduce((s,it) => s + it.cantidad * it.precioCostoUSD, 0);
+  const compra = {
+    id: uid('comp'),
+    fechaHora: hoyISO(),
+    proveedor: prov,
+    items: [...carritoCompra],
+    totalUSD: total,
+    estado, notas,
+    usuario: STATE.user.usuario,
+    usuarioNombre: STATE.user.nombre
+  };
+
+  if(estado === 'recibido'){
+    carritoCompra.forEach(it => {
+      const r = sumarStock(it.productoId, it.cantidad);
+      if(r){
+        const p = getProductoById(it.productoId);
+        if(p && it.precioCostoUSD > 0){
+          p.precioCostoUSD = it.precioCostoUSD;
+          const margen = parseFloat(STATE.config.margenDefault)||40;
+          p.precioVentaUSD = it.precioCostoUSD * (1 + margen/100);
+        }
+        registrarMovimiento({
+          tipo: 'compra',
+          productoId: it.productoId,
+          producto: it.descripcion,
+          codigo: it.codigo,
+          cantidad: it.cantidad,
+          stockAntes: r.antes,
+          stockDespues: r.despues,
+          motivo: `Compra a ${prov}`,
+          referencia: compra.id
+        });
+      }
+    });
+  }
+
+  STATE.compras.push(compra);
+  guardarTodo();
+  toast('Compra registrada', 'success');
+  closeModal('modalProducto');
+  renderTablaCompras();
+}
+
+function marcarRecibido(id){
+  const c = STATE.compras.find(x => x.id === id);
+  if(!c) return;
+  document.getElementById('confirmText').innerHTML =
+    `¿Marcar como recibida? El stock se sumará al inventario.`;
+  document.getElementById('confirmBtn').onclick = () => {
+    c.estado = 'recibido';
+    c.fechaRecepcion = hoyISO();
+    c.items.forEach(it => {
+      const r = sumarStock(it.productoId, it.cantidad);
+      if(r){
+        const p = getProductoById(it.productoId);
+        if(p && it.precioCostoUSD > 0){
+          p.precioCostoUSD = it.precioCostoUSD;
+          const margen = parseFloat(STATE.config.margenDefault)||40;
+          p.precioVentaUSD = it.precioCostoUSD * (1 + margen/100);
+        }
+        registrarMovimiento({
+          tipo: 'compra',
+          productoId: it.productoId,
+          producto: it.descripcion,
+          codigo: it.codigo,
+          cantidad: it.cantidad,
+          stockAntes: r.antes,
+          stockDespues: r.despues,
+          motivo: `Compra recibida de ${c.proveedor}`,
+          referencia: c.id
+        });
+      }
+    });
+    guardarTodo();
+    toast('Compra recibida. Stock actualizado.', 'success');
+    closeModal('modalConfirm');
+    renderTablaCompras();
+  };
+  openModal('modalConfirm');
+}
+
+function confirmDelCompra(id){
+  document.getElementById('confirmText').innerHTML = '¿Eliminar esta compra?';
+  document.getElementById('confirmBtn').onclick = () => {
+    STATE.compras = STATE.compras.filter(x => x.id !== id);
+    guardarTodo();
+    toast('Compra eliminada', 'success');
+    closeModal('modalConfirm');
+    renderTablaCompras();
+  };
+  openModal('modalConfirm');
+}
+
+/* ============ REPORTES ============ */
+function renderReportes(main){
+  const hoy = hoyFecha();
+  const mes = new Date().getMonth(), anio = new Date().getFullYear();
+  const ventasMes = STATE.ventas.filter(v => {
+    if(!v.fechaHora) return false;
+    const d = new Date(v.fechaHora);
+    return d.getMonth() === mes && d.getFullYear() === anio;
+  });
+
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-chart-line"></i> Reportes</h2>
+
+    <div class="cards-grid">
+      <div class="stat-card"><div class="label">Ventas del Mes</div>
+        <div class="value">${ventasMes.length}</div>
+        <div class="sub">transacciones</div></div>
+      <div class="stat-card green"><div class="label">Facturado USD (Mes)</div>
+        <div class="value">${fmtUSD(ventasMes.reduce((s,v) => s + v.totalUSD, 0))}</div></div>
+      <div class="stat-card orange"><div class="label">Facturado Bs (Mes)</div>
+        <div class="value" style="font-size:1.3rem;">${fmtBs(ventasMes.reduce((s,v) => s + v.totalBs, 0))}</div></div>
+      <div class="stat-card purple"><div class="label">Devoluciones (Mes)</div>
+        <div class="value">${STATE.devoluciones.filter(d => {
+          const dd = new Date(d.fechaHora);
+          return dd.getMonth() === mes && dd.getFullYear() === anio;
+        }).length}</div></div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;color:#1a1a1a;font-size:1.05rem;">
+      <i class="fas fa-calendar-alt" style="color:#e85a1a;"></i> Reportes por período</h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Desde</label>
+        <input type="date" id="repDesde" value="${hoy}">
+      </div>
+      <div class="form-group">
+        <label>Hasta</label>
+        <input type="date" id="repHasta" value="${hoy}">
+      </div>
+      <div class="form-group" style="max-width:200px;">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" onclick="generarReporteVentas()">
+          <i class="fas fa-search"></i> Generar</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+      <button class="btn btn-success" onclick="repVentasExcel()">
+        <i class="fas fa-file-excel"></i> Ventas Excel</button>
+      <button class="btn btn-danger" onclick="repVentasPDF()">
+        <i class="fas fa-file-pdf"></i> Ventas PDF</button>
+      <button class="btn btn-success" onclick="repConsolidadoExcel()">
+        <i class="fas fa-file-excel"></i> Consolidado Excel</button>
+      <button class="btn btn-danger" onclick="repConsolidadoPDF()">
+        <i class="fas fa-file-pdf"></i> Consolidado PDF</button>
+      <button class="btn btn-warning" onclick="repFiscalPDF()">
+        <i class="fas fa-file-pdf"></i> Libro de Ventas (fiscal)</button>
+    </div>
+
+    <div id="repResultado"></div>
+  </div>`;
+}
+
+function filtrarVentasPeriodo(){
+  const d1 = document.getElementById('repDesde').value;
+  const d2 = document.getElementById('repHasta').value;
+  return STATE.ventas.filter(v => {
+    if(!v.fechaHora) return false;
+    const f = v.fechaHora.split('T')[0];
+    if(d1 && f < d1) return false;
+    if(d2 && f > d2) return false;
+    return true;
+  });
+}
+
+function generarReporteVentas(){
+  const ventas = filtrarVentasPeriodo();
+  const totalUSD = ventas.reduce((s,v) => s + v.totalUSD, 0);
+  const totalBs = ventas.reduce((s,v) => s + v.totalBs, 0);
+  const totalIva = ventas.reduce((s,v) => s + (v.ivaUSD||0), 0);
+
+  const cont = document.getElementById('repResultado');
+  cont.innerHTML = `
+    <div class="info-box">
+      <strong>${ventas.length}</strong> ventas |
+      Total USD: <strong>${fmtUSD(totalUSD)}</strong> |
+      Total Bs: <strong>${fmtBs(totalBs)}</strong> |
+      IVA: <strong>${fmtUSD(totalIva)}</strong>
+    </div>
+    <div class="table-wrap" style="max-height:400px;">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Cliente</th><th>Vendedor</th>
+          <th>Items</th><th>Subtotal</th><th>IVA</th><th>Total USD</th>
+          <th>Total Bs</th><th>Método</th>
+        </tr></thead>
+        <tbody>
+          ${ventas.slice(0, 200).map(v => `
+            <tr>
+              <td>${fmtFecha(v.fechaHora)}</td>
+              <td>${v.cliente||'-'}</td>
+              <td>${v.vendedorNombre||'-'}</td>
+              <td>${v.items.length}</td>
+              <td>${fmtUSD(v.subtotalUSD)}</td>
+              <td>${fmtUSD(v.ivaUSD)}</td>
+              <td><strong>${fmtUSD(v.totalUSD)}</strong></td>
+              <td>${fmtBs(v.totalBs)}</td>
+              <td>${v.metodoPago||'-'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function repVentasExcel(){
+  const ventas = filtrarVentasPeriodo();
+  if(ventas.length === 0){ toast('Sin ventas en el período', 'warning'); return; }
+  const wb = XLSX.utils.book_new();
+
+  const dataVentas = ventas.map(v => ({
+    Fecha: v.fechaHora, Cliente: v.cliente, Vendedor: v.vendedorNombre,
+    Items: v.items.length, Subtotal_USD: v.subtotalUSD,
+    IVA_USD: v.ivaUSD, Total_USD: v.totalUSD,
+    Tasa_BCV: v.tasaBCV, Total_Bs: v.totalBs,
+    Moneda: v.monedaPago, Metodo: v.metodoPago, Referencia: v.referencia
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataVentas), 'Ventas');
+
+  const detalle = [];
+  ventas.forEach(v => {
+    v.items.forEach(it => {
+      detalle.push({
+        Fecha: v.fechaHora, Cliente: v.cliente, Vendedor: v.vendedorNombre,
+        Codigo: it.codigo, Producto: it.descripcion,
+        Cantidad: it.cantidad, Precio_Unit_USD: it.precioUnitUSD,
+        Subtotal_USD: it.cantidad * it.precioUnitUSD
+      });
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Detalle');
+
+  XLSX.writeFile(wb, `ventas-${hoyFecha()}.xlsx`);
+  toast('Excel exportado', 'success');
+}
+
+function repVentasPDF(){
+  const ventas = filtrarVentasPeriodo();
+  if(ventas.length === 0){ toast('Sin ventas', 'warning'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('landscape');
+  doc.setFontSize(16);
+  doc.text('Reporte de Ventas', 14, 15);
+  doc.setFontSize(10);
+  doc.text(`${STATE.config.empresa} — RIF ${STATE.config.rif}`, 14, 21);
+  doc.text(`Período: ${document.getElementById('repDesde').value} al ${document.getElementById('repHasta').value}`, 14, 27);
+  const totalUSD = ventas.reduce((s,v) => s + v.totalUSD, 0);
+  const totalBs = ventas.reduce((s,v) => s + v.totalBs, 0);
+  doc.text(`Total: ${ventas.length} ventas | USD ${fmtUSD(totalUSD)} | ${fmtBs(totalBs)}`, 14, 33);
+
+  const td = ventas.map(v => [
+    fmtFecha(v.fechaHora), v.cliente, v.vendedorNombre,
+    v.items.length, fmtUSD(v.subtotalUSD), fmtUSD(v.ivaUSD),
+    fmtUSD(v.totalUSD), fmtBs(v.totalBs), v.metodoPago
+  ]);
+  doc.autoTable({
+    head: [['Fecha','Cliente','Vendedor','Items','Subtotal','IVA','Total USD','Total Bs','Método']],
+    body: td, startY: 39, headStyles: {fillColor:[26,26,26]}, styles:{fontSize:7}
+  });
+  doc.save(`ventas-${hoyFecha()}.pdf`);
+  toast('PDF exportado', 'success');
+}
+
+function repConsolidadoExcel(){
+  const ventas = filtrarVentasPeriodo();
+  if(ventas.length === 0){ toast('Sin ventas', 'warning'); return; }
+
+  const porProd = {};
+  ventas.forEach(v => v.items.forEach(it => {
+    const k = it.codigo;
+    porProd[k] = porProd[k] || { Codigo: it.codigo, Producto: it.descripcion, Cantidad: 0, Total_USD: 0 };
+    porProd[k].Cantidad += it.cantidad;
+    porProd[k].Total_USD += it.cantidad * it.precioUnitUSD;
+  }));
+
+  const porVend = {};
+  ventas.forEach(v => {
+    const k = v.vendedorNombre;
+    porVend[k] = porVend[k] || { Vendedor: k, Ventas: 0, Total_USD: 0, Total_Bs: 0 };
+    porVend[k].Ventas++;
+    porVend[k].Total_USD += v.totalUSD;
+    porVend[k].Total_Bs += v.totalBs;
+  });
+
+  const porMet = {};
+  ventas.forEach(v => {
+    const k = v.metodoPago;
+    porMet[k] = porMet[k] || { Metodo: k, Cantidad: 0, Total_USD: 0 };
+    porMet[k].Cantidad++;
+    porMet[k].Total_USD += v.totalUSD;
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(porProd)), 'Por Producto');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(porVend)), 'Por Vendedor');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(porMet)), 'Por Método');
+  XLSX.writeFile(wb, `consolidado-${hoyFecha()}.xlsx`);
+  toast('Consolidado exportado', 'success');
+}
+
+function repConsolidadoPDF(){
+  const ventas = filtrarVentasPeriodo();
+  if(ventas.length === 0){ toast('Sin ventas', 'warning'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const porProd = {};
+  ventas.forEach(v => v.items.forEach(it => {
+    const k = it.codigo;
+    porProd[k] = porProd[k] || { codigo: it.codigo, nombre: it.descripcion, cant: 0, total: 0 };
+    porProd[k].cant += it.cantidad;
+    porProd[k].total += it.cantidad * it.precioUnitUSD;
+  }));
+  const arrProd = Object.values(porProd).sort((a,b) => b.total - a.total);
+
+  doc.setFontSize(16);
+  doc.text('Consolidado de Ventas', 14, 15);
+  doc.setFontSize(10);
+  doc.text(`${STATE.config.empresa}`, 14, 21);
+  doc.text(`Período: ${document.getElementById('repDesde').value} al ${document.getElementById('repHasta').value}`, 14, 27);
+  const td = arrProd.map(p => [p.codigo, p.nombre, p.cant, fmtUSD(p.total)]);
+  doc.autoTable({
+    head: [['Código','Producto','Cantidad','Total USD']],
+    body: td, startY: 33, headStyles: {fillColor:[26,26,26]}, styles:{fontSize:8}
+  });
+  doc.save(`consolidado-${hoyFecha()}.pdf`);
+  toast('PDF exportado', 'success');
+}
+
+function repFiscalPDF(){
+  const ventas = filtrarVentasPeriodo();
+  if(ventas.length === 0){ toast('Sin ventas', 'warning'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const totalGeneralUSD = ventas.reduce((s,v) => s + v.totalUSD, 0);
+  const totalIvaUSD = ventas.reduce((s,v) => s + (v.ivaUSD||0), 0);
+  const totalBs = ventas.reduce((s,v) => s + v.totalBs, 0);
+
+  doc.setFontSize(15);
+  doc.text('LIBRO DE VENTAS', 14, 15);
+  doc.setFontSize(10);
+  doc.text(STATE.config.empresa || '', 14, 21);
+  doc.text('RIF: ' + (STATE.config.rif || ''), 14, 27);
+  doc.text(`Período: ${document.getElementById('repDesde').value} al ${document.getElementById('repHasta').value}`, 14, 33);
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, 14, 39);
+
+  const td = ventas.map(v => [
+    fmtFechaCorta(v.fechaHora),
+    v.cliente || '',
+    v.referencia || '',
+    fmtUSD(v.subtotalUSD),
+    fmtUSD(v.ivaUSD),
+    fmtUSD(v.totalUSD),
+    v.tasaBCV.toFixed(2),
+    fmtBs(v.totalBs)
+  ]);
+  doc.autoTable({
+    head: [['Fecha','Cliente','Referencia','Base','IVA','Total USD','Tasa','Total Bs']],
+    body: td, startY: 45, headStyles: {fillColor:[26,26,26]}, styles:{fontSize:7},
+    foot: [['','','TOTALES',
+            fmtUSD(totalGeneralUSD - totalIvaUSD),
+            fmtUSD(totalIvaUSD),
+            fmtUSD(totalGeneralUSD),
+            '',
+            fmtBs(totalBs)]]
+  });
+  doc.save(`libro-ventas-${hoyFecha()}.pdf`);
+  toast('Libro de ventas exportado', 'success');
+}
+
+</script>
+</body>
+</html>
