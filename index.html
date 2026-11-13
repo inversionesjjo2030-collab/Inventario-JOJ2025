@@ -48,7 +48,8 @@ header.topbar .brand .brand-icon { width:42px; height:42px; border-radius:50%; b
 header.topbar .brand h1 { font-size:0.95rem; line-height:1.2; }
 header.topbar .brand h1 small { display:block; font-size:0.66rem; color:#b8b8b8; margin-top:2px; }
 header.topbar .user-info { display:flex; align-items:center; gap:12px; font-size:0.8rem; flex-wrap:wrap; }
-header.topbar .user-info .tasa-badge { background:rgba(232,90,26,0.15); border:1px solid rgba(232,90,26,0.4); padding:5px 11px; border-radius:20px; color:#ffb48a; }
+header.topbar .user-info .tasa-badge { background:rgba(232,90,26,0.15); border:1px solid rgba(232,90,26,0.4); padding:5px 11px; border-radius:20px; color:#ffb48a; cursor:pointer; transition:0.2s; }
+header.topbar .user-info .tasa-badge:hover { background:rgba(232,90,26,0.3); }
 header.topbar .user-info button { background:rgba(255,255,255,0.08); color:white; border:1px solid rgba(255,255,255,0.15); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.76rem; }
 header.topbar .user-info button:hover { background:var(--brand-orange); }
 
@@ -209,7 +210,10 @@ small { display:block; font-size:0.72rem; color:#888; margin-top:3px; }
       <h1>INVERSIONES JOJ SOLUTION 2025 C.A.<small>SISTEMA DE INVENTARIO</small></h1>
     </div>
     <div class="user-info">
-      <span class="tasa-badge"><i class="fas fa-dollar-sign"></i> Tasa: <strong id="topTasa">--</strong> Bs/$</span>
+      <!-- BOTÓN DE TASA ACTUALIZADO -->
+      <span class="tasa-badge" onclick="abrirModalTasa()" title="Haz clic para actualizar la tasa del día">
+        <i class="fas fa-dollar-sign"></i> Tasa: <strong id="topTasa">--</strong> Bs/$ <i class="fas fa-edit" style="font-size:0.7rem;margin-left:5px;"></i>
+      </span>
       <span><i class="fas fa-user-circle"></i> <strong id="topUser">--</strong> <span id="topRol" class="badge badge-blue">--</span></span>
       <button onclick="openMiPerfil()"><i class="fas fa-user-cog"></i> Perfil</button>
       <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
@@ -262,6 +266,24 @@ small { display:block; font-size:0.72rem; color:#888; margin-top:3px; }
       <div id="uMsg" class="login-msg"></div>
     </div>
     <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button><button class="btn btn-primary" onclick="saveUsuario()"><i class="fas fa-save"></i> Guardar</button></div>
+  </div>
+</div>
+
+<!-- NUEVO MODAL PARA LA TASA -->
+<div class="modal" id="modalTasa">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-head"><h3><i class="fas fa-dollar-sign"></i> Actualizar Tasa BCV</h3><span class="close-x" onclick="closeModal('modalTasa')">&times;</span></div>
+    <div class="modal-body">
+      <div class="info-box">Ingresa el valor del dólar BCV para hoy. Todos los cálculos y la factura se actualizarán automáticamente.</div>
+      <div class="form-group" style="margin-top:15px;">
+        <label>Tasa BCV (Bs/$) *</label>
+        <input type="number" id="inputTasaBCV" step="0.01" min="0" style="font-size:1.2rem; text-align:center;">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalTasa')">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarTasaRapida()"><i class="fas fa-save"></i> Guardar Tasa</button>
+    </div>
   </div>
 </div>
 
@@ -485,7 +507,7 @@ function eliminarProductoConfirmado(id){ const p = STATE.productos.find(x => x.i
 function exportarInventarioExcel(){ if(STATE.productos.length === 0){ toast('No hay productos', 'warning'); return; } const tasa = parseFloat(STATE.config.tasaBCV)||0; const data = STATE.productos.map(p => ({ Codigo: p.codigo, Descripcion: p.nombre, Modelo: p.modelo||'', Proveedor: p.proveedor||'', Stock: p.stock||0, Stock_Minimo: p.stockMinimo||3, Precio_Costo_USD: p.precioCostoUSD||0, Precio_Venta_USD: p.precioVentaUSD||0, Precio_Venta_Bs: ((p.precioVentaUSD||0)*tasa).toFixed(2), Ubicacion: p.ubicacion||'' })); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Inventario'); XLSX.writeFile(wb, `inventario-${hoyFecha()}.xlsx`); toast('Excel exportado', 'success'); }
 function exportarInventarioPDF(){ if(STATE.productos.length === 0){ toast('No hay productos', 'warning'); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape'); const tasa = parseFloat(STATE.config.tasaBCV)||0; doc.setFontSize(16); doc.text('Inventario — ' + STATE.config.empresa, 14, 15); doc.setFontSize(10); doc.text(`Generado: ${new Date().toLocaleString('es-VE')} | Tasa BCV: ${tasa.toFixed(2)} Bs/$`, 14, 23); doc.text(`Total productos: ${STATE.productos.length}`, 14, 30); const td = STATE.productos.map(p => [p.codigo, p.nombre, p.modelo||'', p.proveedor||'', p.stock||0, fmtUSD(p.precioCostoUSD), fmtUSD(p.precioVentaUSD), fmtBs((p.precioVentaUSD||0)*tasa)]); doc.autoTable({ head: [['Código','Descripción','Modelo','Proveedor','Stock','Costo','Venta USD','Venta Bs']], body: td, startY: 37, headStyles: {fillColor: [26,26,26]}, styles: {fontSize: 7} }); doc.save(`inventario-${hoyFecha()}.pdf`); toast('PDF exportado', 'success'); }
 
-/* IMPORTAR (Lógica Inteligente y Corregida) */
+/* IMPORTAR */
 function renderImportar(main){
   if(!puede('inventario','importar')){ main.innerHTML = '<div class="section active"><div class="empty-state"><i class="fas fa-lock"></i>Sin permiso</div></div>'; return; }
   main.innerHTML = `<div class="section active"><h2 class="page-title"><i class="fas fa-file-import"></i> Importar Inventario</h2><div class="warn-box"><strong>Columnas:</strong> CODIGO, DESCRIPCION, MODELO, PROVEEDOR, PRECIO USD UNITARIO, CANTIDAD SOLICITADA / STOCK REAL / BORRAR (S/N)</div><div style="background:#e8f4fd;border-left:4px solid #3b7ea1;padding:14px 18px;border-radius:8px;margin-bottom:18px;"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;"><div><strong style="color:#1a1a1a;"><i class="fas fa-download"></i> Descargar Plantilla STOCK REAL</strong><p style="margin-top:6px;font-size:0.83rem;color:#6b6b6b;">Descarga tu catálogo con columnas STOCK REAL y BORRAR (S/N).</p></div><button class="btn btn-primary" onclick="descargarPlantillaStockReal()"><i class="fas fa-file-excel"></i> Descargar Excel</button></div></div><div class="form-row"><div class="form-group"><label>Margen (%)</label><input type="number" id="impMargen" step="1" min="0" value="${STATE.config.margenDefault}"></div><div class="form-group"><label>Stock mínimo por defecto</label><input type="number" id="impStockMin" step="1" min="1" value="${STATE.config.stockMinDefault}"></div><div class="form-group"><label>Si el código ya existe</label><select id="impExistente"><option value="actualizar">Actualizar</option><option value="saltar">Saltar</option></select></div></div><div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));"><div class="stat-card" style="text-align:center;cursor:pointer;border-left-color:#2d8a5c;" onclick="document.getElementById('fileExcel').click()"><div style="font-size:2.5rem;color:#2d8a5c;"><i class="fas fa-file-excel"></i></div><h3>Subir Excel</h3><p class="sub">.xlsx, .xls, .csv</p><input type="file" id="fileExcel" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarExcel(event)"></div><div class="stat-card" style="text-align:center;cursor:pointer;border-left-color:#c0392b;" onclick="document.getElementById('filePDF').click()"><div style="font-size:2.5rem;color:#c0392b;"><i class="fas fa-file-pdf"></i></div><h3>Subir PDF</h3><p class="sub">Solo con texto seleccionable</p><input type="file" id="filePDF" accept=".pdf" style="display:none" onchange="importarPDF(event)"></div>${esAdminPrincipal() ? `<div class="stat-card" style="text-align:center;cursor:pointer;border-left-color:#e85a1a;" onclick="borrarEImportar()"><div style="font-size:2.5rem;color:#e85a1a;"><i class="fas fa-bomb"></i></div><h3>Borrar e importar</h3><p class="sub">Vacía inventario y sube Excel</p></div>` : ''}</div><div id="importPreview" style="margin-top:20px;"></div></div>`;
@@ -512,7 +534,6 @@ async function importarPDF(evt){
 function procesarFilas(rows){
   if(!rows || rows.length < 2){ toast('Archivo vacío', 'warning'); showLoader(false); return; }
   
-  // 1) Encontrar el header en las primeras 30 filas
   let headerIdx = -1;
   for(let i=0; i<Math.min(rows.length, 30); i++){ 
     const fila = (rows[i]||[]).map(c => String(c||'').toUpperCase().trim()); 
@@ -522,7 +543,6 @@ function procesarFilas(rows){
 
   const headers = (rows[headerIdx]||[]).map(c => String(c||'').toUpperCase().trim());
   
-  // 2) Mapear columnas dinámicamente
   const findCol = (...aliases) => { for(const a of aliases){ const A = a.toUpperCase(); let idx = headers.findIndex(h => h === A); if(idx !== -1) return idx; idx = headers.findIndex(h => h.includes(A)); if(idx !== -1) return idx; } return -1; };
   const colCod = findCol('CODIGO','CÓDIGO','COD','SKU'); 
   const colNom = findCol('DESCRIPCION','DESCRIPCIÓN','NOMBRE','PRODUCTO'); 
@@ -532,17 +552,14 @@ function procesarFilas(rows){
   const colCant = findCol('STOCK REAL','STOCK ACTUAL','EXISTENCIA','CANTIDAD SOLICITADA','CANTIDAD','STOCK','QTY'); 
   const colBorrar = findCol('BORRAR','ELIMINAR','DELETE');
 
-  console.log('📌 Header detectado en fila', headerIdx, '| Columnas:', {colCod, colNom, colMod, colProv, colPre, colCant, colBorrar});
-
   if(colCod === -1 || colNom === -1){ toast('Faltan columnas CODIGO/DESCRIPCION', 'error'); showLoader(false); return; }
   
   const tieneStockReal = colCant !== -1 && headers.some(h => h.includes('STOCK REAL') || h.includes('STOCK ACTUAL') || h.includes('EXISTENCIA'));
   
-  // 3) Extraer datos (manejando índices absolutos y convirtiendo a string preservando formato)
   const registros = []; let descartadas = 0;
   for(let i = headerIdx+1; i < rows.length; i++){
     const r = rows[i] || [];
-    if(r.every(c => c === '' || c === null || c === undefined)) continue; // Fila vacía
+    if(r.every(c => c === '' || c === null || c === undefined)) continue; 
     
     const rawCod = r[colCod]; const rawNom = r[colNom];
     if(rawCod === '' || rawCod === null || rawCod === undefined){ descartadas++; continue; }
@@ -551,7 +568,7 @@ function procesarFilas(rows){
     let codigo = (typeof rawCod === 'number') ? rawCod.toString() : String(rawCod).trim(); 
     const nombre = String(rawNom).trim();
     
-    if(codigo.toUpperCase() === 'CODIGO' || codigo.toUpperCase() === 'CÓDIGO'){ descartadas++; continue; } // Ignorar sub-headers
+    if(codigo.toUpperCase() === 'CODIGO' || codigo.toUpperCase() === 'CÓDIGO'){ descartadas++; continue; } 
     
     const stockVal = colCant !== -1 ? r[colCant] : null; 
     const precioVal = colPre !== -1 ? r[colPre] : 0;
@@ -680,6 +697,38 @@ function renderConfiguracion(main){
   main.innerHTML = `<div class="section active"><h2 class="page-title"><i class="fas fa-gear"></i> Configuración</h2><h3 style="margin:0 0 12px;color:#1a1a1a;font-size:1rem;">Datos Generales</h3><div class="form-row"><div class="form-group"><label>Tasa BCV (Bs por $) *</label><input type="number" id="cfgTasa" step="0.01" min="0" value="${c.tasaBCV}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>Margen por defecto (%)</label><input type="number" id="cfgMargen" step="1" min="0" value="${c.margenDefault}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>IVA (%)</label><input type="number" id="cfgIva" step="1" min="0" value="${c.iva}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>Stock mínimo por defecto</label><input type="number" id="cfgStockMin" step="1" min="1" value="${c.stockMinDefault}" ${!puedeEditar?'readonly':''}></div></div><h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;">Datos Fiscales (SENIAT)</h3><div class="form-row"><div class="form-group"><label>Razón social</label><input type="text" id="cfgEmpresa" value="${c.empresa||''}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>RIF</label><input type="text" id="cfgRif" value="${c.rif||''}" ${!puedeEditar?'readonly':''}></div></div><div class="form-row"><div class="form-group"><label>Teléfono</label><input type="text" id="cfgTel" value="${c.telefono||''}" ${!puedeEditar?'readonly':''}></div><div class="form-group full"><label>Dirección fiscal</label><input type="text" id="cfgDir" value="${c.direccion||''}" ${!puedeEditar?'readonly':''}></div></div><div class="form-row"><div class="form-group"><label>Serie de factura</label><input type="text" id="cfgSerieFactura" value="${c.serieFactura||'01'}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>N° factura actual</label><input type="number" id="cfgNumeroFactura" min="1" value="${c.numeroFacturaActual||1}" ${!puedeEditar?'readonly':''}></div></div><h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;">Números de Control</h3><div class="form-row"><div class="form-group"><label>Control desde</label><input type="number" id="cfgControlDesde" min="1" value="${c.numeroControlDesde||1}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>Control hasta</label><input type="number" id="cfgControlHasta" min="1" value="${c.numeroControlHasta||1000}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>Control actual</label><input type="number" id="cfgControlActual" min="1" value="${c.numeroControlActual||1}" ${!puedeEditar?'readonly':''}></div></div><h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;">Imprenta Digital (opcional)</h3><div class="form-row"><div class="form-group"><label>Razón social</label><input type="text" id="cfgImprentaRS" value="${c.imprentaRazonSocial||''}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>RIF</label><input type="text" id="cfgImprentaRif" value="${c.imprentaRif||''}" ${!puedeEditar?'readonly':''}></div></div><div class="form-row"><div class="form-group"><label>N° Providencia</label><input type="text" id="cfgImprentaProv" value="${c.imprentaProvidencia||''}" ${!puedeEditar?'readonly':''}></div><div class="form-group"><label>Fecha asignación</label><input type="date" id="cfgImprentaFecha" value="${c.imprentaFechaAsignacion||''}" ${!puedeEditar?'readonly':''}></div></div>${puedeEditar ? `<div class="form-row" style="margin-top:20px;"><button class="btn btn-success" onclick="saveConfig()"><i class="fas fa-save"></i> Guardar Configuración</button></div>` : '<div class="info-box">Solo admin puede editar.</div>'}<h3 style="margin:30px 0 10px;color:#1a1a1a;font-size:1rem;"><i class="fas fa-cloud"></i> Sincronización</h3><div class="info-box"><strong>Estado:</strong> ${FB.activo ? '<span style="color:#2d8a5c;">Conectado</span>' : '<span style="color:#c0392b;">Desconectado</span>'}<br><small>Proyecto: ${FIREBASE_CONFIG.projectId}</small><br><small>Última sincronización: ${ultimaSync}</small></div><div class="form-row"><button class="btn btn-success" onclick="forzarSincronizacion()"><i class="fas fa-sync"></i> Sincronizar Ahora</button><button class="btn btn-warning" onclick="forzarBootstrapUsuarios()"><i class="fas fa-user-plus"></i> Restaurar usuarios iniciales</button>${esAdminPrincipal() ? `<button class="btn btn-primary" onclick="subirTodoANube()"><i class="fas fa-cloud-upload-alt"></i> Subir a nube</button><button class="btn btn-warning" onclick="bajarTodoDeNube()"><i class="fas fa-cloud-download-alt"></i> Bajar de nube</button>` : ''}</div><h3 style="margin:30px 0 10px;color:#1a1a1a;font-size:1rem;"><i class="fas fa-database"></i> Backup</h3><div class="warn-box"><button class="btn btn-warning" onclick="exportarBackup()"><i class="fas fa-download"></i> Exportar backup</button><button class="btn btn-primary" onclick="document.getElementById('fileImp').click()"><i class="fas fa-upload"></i> Importar backup</button><input type="file" id="fileImp" accept=".json" style="display:none" onchange="importarBackup(event)">${esAdminPrincipal() ? `<button class="btn btn-danger" onclick="confirmarBorrarTodo()" style="margin-left:10px;"><i class="fas fa-trash"></i> Borrar TODOS los datos</button>` : ''}</div><div class="info-box" style="margin-top:20px;"><strong>Estadísticas:</strong> Productos: ${STATE.productos.length} | Movimientos: ${STATE.movimientos.length} | Ventas: ${STATE.ventas.length} | Clientes: ${STATE.clientes.length} | Compras: ${STATE.compras.length} | Usuarios: ${STATE.usuarios.length} | Auditoría: ${STATE.auditoria.length}</div></div>`;
 }
 function saveConfig(){ if(!puede('configuracion','editar')){ toast('Sin permiso', 'error'); return; } STATE.config = { tasaBCV: parseFloat(document.getElementById('cfgTasa').value)||36.50, margenDefault: parseFloat(document.getElementById('cfgMargen').value)||40, iva: parseFloat(document.getElementById('cfgIva').value)||16, stockMinDefault: parseInt(document.getElementById('cfgStockMin').value)||3, empresa: document.getElementById('cfgEmpresa').value.trim(), rif: document.getElementById('cfgRif').value.trim(), telefono: document.getElementById('cfgTel').value.trim(), direccion: document.getElementById('cfgDir').value.trim(), serieFactura: document.getElementById('cfgSerieFactura').value.trim() || '01', numeroFacturaActual: parseInt(document.getElementById('cfgNumeroFactura').value)||1, numeroControlDesde: parseInt(document.getElementById('cfgControlDesde').value)||1, numeroControlHasta: parseInt(document.getElementById('cfgControlHasta').value)||1000, numeroControlActual: parseInt(document.getElementById('cfgControlActual').value)||1, imprentaRazonSocial: document.getElementById('cfgImprentaRS').value.trim(), imprentaRif: document.getElementById('cfgImprentaRif').value.trim(), imprentaProvidencia: document.getElementById('cfgImprentaProv').value.trim(), imprentaFechaAsignacion: document.getElementById('cfgImprentaFecha').value }; const hoy = hoyFecha(); const idx = STATE.tasas.findIndex(t => t.fecha === hoy); if(idx >= 0) STATE.tasas[idx].valor = STATE.config.tasaBCV; else STATE.tasas.push({fecha: hoy, valor: STATE.config.tasaBCV}); registrarAuditoria({ accion:'EDITAR_CONFIGURACION', modulo:'configuracion', descripcion:'Configuración actualizada', datosAntes:null, datosDespues:STATE.config }); guardarTodo(); document.getElementById('topTasa').textContent = STATE.config.tasaBCV.toFixed(2); toast('Configuración guardada', 'success'); }
+
+// NUEVAS FUNCIONES PARA LA TASA RÁPIDA
+function abrirModalTasa() {
+    document.getElementById('inputTasaBCV').value = STATE.config.tasaBCV;
+    openModal('modalTasa');
+}
+
+function guardarTasaRapida() {
+    const nuevaTasa = parseFloat(document.getElementById('inputTasaBCV').value);
+    if (!nuevaTasa || nuevaTasa <= 0) {
+        toast('Ingresa una tasa válida', 'error');
+        return;
+    }
+    STATE.config.tasaBCV = nuevaTasa;
+    const hoy = hoyFecha();
+    const idx = STATE.tasas.findIndex(t => t.fecha === hoy);
+    if (idx >= 0) STATE.tasas[idx].valor = nuevaTasa;
+    else STATE.tasas.push({ fecha: hoy, valor: nuevaTasa });
+    
+    registrarAuditoria({ accion: 'EDITAR_TASA', modulo: 'configuracion', descripcion: `Tasa actualizada a ${nuevaTasa} Bs/$`, datosAntes: null, datosDespues: { tasa: nuevaTasa } });
+    guardarTodo();
+    document.getElementById('topTasa').textContent = nuevaTasa.toFixed(2);
+    closeModal('modalTasa');
+    toast('Tasa actualizada correctamente', 'success');
+    
+    // Si estamos en la vista de ventas, actualizar los totales visuales
+    if(document.getElementById('vTasaLabel')) {
+        document.getElementById('vTasaLabel').textContent = nuevaTasa.toFixed(2);
+        actualizarTotalesVenta();
+    }
+}
+
 function exportarBackup(){ const data = { exportadoEn: hoyISO(), version: 'v3', productos: STATE.productos, movimientos: STATE.movimientos, ventas: STATE.ventas, devoluciones: STATE.devoluciones, clientes: STATE.clientes, compras: STATE.compras, tasas: STATE.tasas, auditoria: STATE.auditoria, config: STATE.config }; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `joj-backup-${hoyFecha()}.json`; a.click(); toast('Backup descargado', 'success'); }
 function importarBackup(evt){ const f = evt.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); document.getElementById('confirmText').innerHTML = `¿Reemplazar datos con el backup?<br>Productos: ${(d.productos||[]).length}<br>Ventas: ${(d.ventas||[]).length}`; document.getElementById('confirmBtn').onclick = () => { STATE.productos = d.productos || []; STATE.movimientos = d.movimientos || []; STATE.ventas = d.ventas || []; STATE.devoluciones = d.devoluciones || []; STATE.clientes = d.clientes || []; STATE.compras = d.compras || []; STATE.tasas = d.tasas || []; STATE.auditoria = d.auditoria || []; STATE.config = {...STATE.config, ...(d.config||{})}; guardarTodo(); closeModal('modalConfirm'); toast('Backup importado', 'success'); setTimeout(() => location.reload(), 1200); }; openModal('modalConfirm'); } catch(err){ toast('Archivo inválido', 'error'); } }; r.readAsText(f); }
 function confirmarBorrarTodo(){ if(!esAdminPrincipal()){ toast('Solo Admin Principal', 'error'); return; } document.getElementById('confirmText').innerHTML = `<strong style="color:#c0392b;">ADVERTENCIA</strong><br>Esto borrará <b>productos, ventas, movimientos, clientes, compras, devoluciones y auditoría</b>.<br><b>NO borra usuarios ni configuración</b>.<br><br>¿Seguro?`; document.getElementById('confirmBtn').onclick = async () => { showLoader(true, 'Borrando datos...'); try { STATE.productos = []; STATE.movimientos = []; STATE.ventas = []; STATE.devoluciones = []; STATE.clientes = []; STATE.compras = []; STATE.tasas = []; STATE.auditoria = []; await guardarTodo(); closeModal('modalConfirm'); toast('Datos operativos borrados. Usuarios y configuración conservados.', 'success'); const activa = document.querySelector('.nav-item.active')?.dataset.sec || 'dashboard'; renderSection(activa); } catch(e){ console.error(e); toast('Error al borrar: ' + e.message, 'error'); } finally { showLoader(false); } }; openModal('modalConfirm'); }
@@ -698,7 +747,9 @@ function verDetalleAuditoria(id){ const a = STATE.auditoria.find(x => x.id === i
 function exportarAuditoriaExcel(){ if(!puede('auditoria','exportar')){ toast('Sin permiso', 'error'); return; } if(STATE.auditoria.length === 0){ toast('Sin registros', 'warning'); return; } const data = STATE.auditoria.map(a => ({ Fecha: a.fechaHora, Usuario: a.usuarioNombre, Accion: a.accion, Modulo: a.modulo, Descripcion: a.descripcion, Motivo: a.motivo, Datos_Antes: a.datosAntes?JSON.stringify(a.datosAntes):'', Datos_Despues: a.datosDespues?JSON.stringify(a.datosDespues):'' })); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Auditoría'); XLSX.writeFile(wb, `auditoria-${hoyFecha()}.xlsx`); toast('Excel exportado', 'success'); }
 function exportarAuditoriaPDF(){ if(!puede('auditoria','exportar')){ toast('Sin permiso', 'error'); return; } if(STATE.auditoria.length === 0){ toast('Sin registros', 'warning'); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape'); doc.setFontSize(16); doc.text('Historial de Auditoría', 14, 15); doc.setFontSize(10); doc.text(`${STATE.config.empresa} — ${new Date().toLocaleString('es-VE')}`, 14, 22); const td = STATE.auditoria.slice(0, 200).map(a => [fmtFecha(a.fechaHora), a.usuarioNombre, a.accion, a.modulo, (a.descripcion||'').substring(0,50), (a.motivo||'').substring(0,40)]); doc.autoTable({ head: [['Fecha','Usuario','Acción','Módulo','Descripción','Motivo']], body: td, startY: 28, headStyles: {fillColor:[26,26,26]}, styles:{fontSize:6} }); doc.save(`auditoria-${hoyFecha()}.pdf`); toast('PDF exportado', 'success'); }
 
-/* VENTAS, DEVOLUCIONES, CLIENTES, COMPRAS, REPORTES */
+/* ================================================================
+   VENTAS (PLANTILLA), DEVOLUCIONES, CLIENTES, COMPRAS, REPORTES
+   ================================================================ */
 function getProductoById(id){ return STATE.productos.find(p => p.id === id); }
 function calcularTotales(items, aplicarIva){ const subtotal = items.reduce((s,it) => s + (parseFloat(it.cantidad)||0) * (parseFloat(it.precioUnitUSD)||0), 0); const iva = aplicarIva ? subtotal * ((parseFloat(STATE.config.iva)||0)/100) : 0; return { subtotal, iva, total: subtotal + iva }; }
 
@@ -706,45 +757,412 @@ let carritoVenta = [];
 function renderVentas(main){
   if(!puede('ventas','ver')){ main.innerHTML = '<div class="section active"><div class="empty-state"><i class="fas fa-lock"></i>Sin permiso</div></div>'; return; }
   carritoVenta = []; const tasa = parseFloat(STATE.config.tasaBCV)||0;
-  main.innerHTML = `<div class="section active"><h2 class="page-title"><i class="fas fa-cash-register"></i> Nueva Venta</h2><div class="info-box" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;"><span><strong>Tasa BCV:</strong> ${tasa.toFixed(2)} Bs/$</span><span><strong>IVA:</strong> ${STATE.config.iva}%</span><span><strong>Vendedor:</strong> ${STATE.user.nombre}</span></div><div class="flex-split"><div><div class="form-row"><div class="form-group"><label>Buscar producto</label><input type="text" id="ventaBusca" placeholder="Código o nombre..." oninput="buscarProductoVenta()" autocomplete="off"></div></div><div id="ventaResultados" class="preview-table" style="max-height:250px;display:none;"></div><h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1.05rem;"><i class="fas fa-shopping-cart" style="color:#e85a1a;"></i> Carrito</h3><div class="table-wrap" style="max-height:350px;"><table><thead><tr><th>Producto</th><th>Precio USD</th><th>Cantidad</th><th>Subtotal</th><th></th></tr></thead><tbody id="tbodyCarrito"><tr><td colspan="5" class="empty-state"><i class="fas fa-shopping-basket"></i>Carrito vacío</td></tr></tbody></table></div></div><div><h3 style="margin:0 0 10px;color:#1a1a1a;font-size:1rem;"><i class="fas fa-user" style="color:#e85a1a;"></i> Cliente</h3><div class="form-row"><div class="form-group full"><label>Nombre / Razón social</label><input type="text" id="ventaCliente" placeholder="Cliente ocasional"></div></div><div class="form-row"><div class="form-group"><label>RIF / Cédula</label><input type="text" id="ventaRif" placeholder="V-12345678"></div></div><div class="form-row"><div class="form-group full"><label>Dirección</label><input type="text" id="ventaDireccion"></div></div><h3 style="margin:15px 0 10px;color:#1a1a1a;font-size:1rem;"><i class="fas fa-calculator" style="color:#e85a1a;"></i> Totales</h3><div style="background:white;padding:15px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);"><div class="iva-row"><span>Subtotal USD:</span><strong id="vSubtotal">$0.00</strong></div><div class="iva-row"><span>IVA (${STATE.config.iva}%):</span><strong id="vIva">$0.00</strong></div><div class="iva-row total"><span>TOTAL USD:</span><strong id="vTotalUSD">$0.00</strong></div><div class="iva-row total" style="border-top:none;font-size:1rem;color:#2d8a5c;"><span>TOTAL Bs:</span><strong id="vTotalBs">Bs 0,00</strong></div></div><h3 style="margin:20px 0 10px;color:#1a1a1a;font-size:1rem;"><i class="fas fa-money-bill-wave" style="color:#e85a1a;"></i> Pago</h3><div class="form-row"><div class="form-group"><label>Moneda</label><select id="vMoneda"><option value="USD">USD</option><option value="Bs">Bs</option><option value="Mixto">Mixto</option></select></div></div><div class="form-row"><div class="form-group"><label>Método</label><select id="vMetodo"><option>Efectivo</option><option>Pago móvil</option><option>Transferencia</option><option>Punto de venta</option><option>Zelle</option><option>Binance USDT</option><option>Otro</option></select></div></div><div class="form-row"><div class="form-group"><label>Referencia</label><input type="text" id="vReferencia"></div></div><div class="form-row"><div class="form-group"><label>Aplicar IVA</label><select id="vAplicaIva" onchange="actualizarTotalesVenta()"><option value="si">Sí (${STATE.config.iva}%)</option><option value="no">No (exento)</option></select></div></div><div class="form-row" style="margin-top:15px;"><button class="btn btn-success" onclick="registrarVenta()" style="width:100%;justify-content:center;"><i class="fas fa-check-circle"></i> REGISTRAR VENTA</button></div><div class="form-row"><button class="btn btn-secondary" onclick="limpiarCarrito()" style="width:100%;justify-content:center;"><i class="fas fa-times"></i> Vaciar carrito</button></div></div></div><h3 style="margin:30px 0 12px;color:#1a1a1a;font-size:1.05rem;"><i class="fas fa-history" style="color:#e85a1a;"></i> Últimas 20 Ventas</h3><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Factura N°</th><th>Cliente</th><th>Total USD</th><th>Total Bs</th><th>Vendedor</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tbodyUltimasVentas"></tbody></table></div></div>`;
+  
+  main.innerHTML = `
+  <div class="section active">
+    <h2 class="page-title"><i class="fas fa-file-invoice"></i> Nueva Factura / Venta</h2>
+    
+    <!-- PLANTILLA DE FACTURA -->
+    <div style="background:white; padding:25px; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1); max-width:850px; margin:0 auto;">
+      
+      <!-- Encabezado de la Plantilla -->
+      <div style="display:flex; justify-content:space-between; border-bottom:2px solid #1a1a1a; padding-bottom:15px; margin-bottom:20px;">
+        <div>
+          <h2 style="margin:0; color:#1a1a1a; font-size:1.2rem;">INVERSIONES JOJ SOLUTION 2025 C.A.</h2>
+          <p style="margin:2px 0; font-size:0.8rem; color:#555;">RIF: J-509112580</p>
+          <p style="margin:2px 0; font-size:0.75rem; color:#555; max-width:300px;">CALLE PRINCIPAL CC EL VALLE NIVEL GALERIAS LOCAL G-20 SECTOR EL VALLE CARACAS</p>
+        </div>
+        <div style="text-align:right;">
+          <h3 style="margin:0; color:#e85a1a; font-size:1.1rem;">FACTURA</h3>
+          <p style="margin:2px 0; font-size:0.8rem;"><strong>N°:</strong> <span id="previewFacturaN">Auto</span></p>
+          <p style="margin:2px 0; font-size:0.8rem;"><strong>Control:</strong> <span id="previewControlN">Auto</span></p>
+          <p style="margin:2px 0; font-size:0.8rem;"><strong>Fecha:</strong> ${fmtFechaCorta(hoyISO())}</p>
+        </div>
+      </div>
+
+      <!-- Datos del Cliente -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+        <div class="form-group"><label>Nombre / Razón Social</label><input type="text" id="ventaCliente" placeholder="Cliente ocasional"></div>
+        <div class="form-group"><label>RIF / Cédula</label><input type="text" id="ventaRif" placeholder="V-12345678"></div>
+        <div class="form-group full"><label>Dirección</label><input type="text" id="ventaDireccion"></div>
+      </div>
+
+      <!-- Buscador de Productos -->
+      <div style="background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:15px; border:1px dashed #ccc;">
+        <div class="form-group" style="margin:0;">
+          <label style="color:#e85a1a;"><i class="fas fa-search"></i> Agregar Producto</label>
+          <input type="text" id="ventaBusca" placeholder="Escribe el código o nombre y presiona Enter..." oninput="buscarProductoVenta()" onkeydown="if(event.key==='Enter'){event.preventDefault(); buscarProductoVenta(true);}" autocomplete="off">
+        </div>
+        <div id="ventaResultados" class="preview-table" style="max-height:200px;display:none; margin-top:10px; background:white;"></div>
+      </div>
+
+      <!-- Tabla de Productos (Carrito) -->
+      <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <thead>
+          <tr style="background:#1a1a1a; color:white; font-size:0.75rem;">
+            <th style="padding:8px; text-align:left;">Cant</th>
+            <th style="padding:8px; text-align:left;">Descripción</th>
+            <th style="padding:8px; text-align:right;">P. Unit (USD)</th>
+            <th style="padding:8px; text-align:right;">Total (USD)</th>
+            <th style="padding:8px; text-align:center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyCarrito">
+          <tr><td colspan="5" style="text-align:center; padding:20px; color:#999;"><i class="fas fa-shopping-basket"></i> No hay productos agregados</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Totales y Pago -->
+      <div style="display:grid; grid-template-columns:1fr 300px; gap:20px;">
+        <div>
+          <h4 style="margin:0 0 10px; font-size:0.9rem; color:#1a1a1a;">Información de Pago</h4>
+          <div class="form-row">
+            <div class="form-group"><label>Método</label><select id="vMetodo"><option>Efectivo</option><option>Pago móvil</option><option>Transferencia</option><option>Punto de venta</option><option>Zelle</option><option>Binance USDT</option><option>Otro</option></select></div>
+            <div class="form-group"><label>Moneda</label><select id="vMoneda"><option value="Bs">Bolívares (Bs)</option><option value="USD">Dólares (USD)</option><option value="Mixto">Mixto</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full"><label>Referencia</label><input type="text" id="vReferencia"></div>
+            <div class="form-group"><label>Aplicar IVA</label><select id="vAplicaIva" onchange="actualizarTotalesVenta()"><option value="si">Sí (${STATE.config.iva}%)</option><option value="no">No (exento)</option></select></div>
+          </div>
+        </div>
+        
+        <div style="background:#f8f9fa; padding:15px; border-radius:8px;">
+          <div class="iva-row"><span>Subtotal USD:</span><strong id="vSubtotal">$0.00</strong></div>
+          <div class="iva-row"><span>IVA (${STATE.config.iva}%):</span><strong id="vIva">$0.00</strong></div>
+          <div class="iva-row" style="border-bottom:none; margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+            <span style="font-size:1.1rem; font-weight:bold;">TOTAL BS:</span>
+            <strong id="vTotalBs" style="font-size:1.3rem; color:#2d8a5c;">Bs 0,00</strong>
+          </div>
+          <div class="iva-row" style="border-bottom:none; color:#777; font-size:0.85rem;">
+            <span>Total Ref USD:</span>
+            <strong id="vTotalUSD">$0.00</strong>
+          </div>
+          <div style="font-size:0.7rem; color:#999; text-align:right; margin-top:5px;">Tasa: <span id="vTasaLabel">${tasa.toFixed(2)}</span> Bs/$</div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div style="margin-top:25px; text-align:right; border-top:1px solid #eee; padding-top:20px;">
+        <button class="btn btn-secondary" onclick="limpiarCarrito()"><i class="fas fa-eraser"></i> Limpiar</button>
+        <button class="btn btn-success" onclick="registrarVenta(true)" style="font-size:1rem; padding:12px 25px;"><i class="fas fa-print"></i> Guardar e Imprimir</button>
+        <button class="btn btn-primary" onclick="registrarVenta(false)"><i class="fas fa-save"></i> Solo Guardar</button>
+      </div>
+    </div>
+
+    <!-- Últimas Ventas -->
+    <h3 style="margin:40px 0 12px;color:#1a1a1a;font-size:1.05rem;"><i class="fas fa-history" style="color:#e85a1a;"></i> Últimas 20 Ventas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Factura N°</th><th>Cliente</th><th>Total Bs</th><th>Total USD</th><th>Vendedor</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tbodyUltimasVentas"></tbody>
+      </table>
+    </div>
+  </div>`;
+  
+  document.getElementById('previewFacturaN').textContent = generarNumeroFactura();
+  const ctrl = generarNumeroControl();
+  document.getElementById('previewControlN').textContent = ctrl ? ctrl : 'Agotado';
+  
   renderUltimasVentas();
 }
-function renderUltimasVentas(){ const tb = document.getElementById('tbodyUltimasVentas'); if(!tb) return; const lista = [...STATE.ventas].sort((a,b) => new Date(b.fechaHora) - new Date(a.fechaHora)).slice(0, 20); if(lista.length === 0){ tb.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i>Sin ventas</td></tr>'; return; } tb.innerHTML = lista.map(v => { const cancelada = v.estado === 'cancelada'; return `<tr style="${cancelada ? 'opacity:0.5;' : ''}"><td>${fmtFecha(v.fechaHora)}</td><td><strong>${v.numeroFactura||'-'}</strong></td><td>${v.cliente||'-'}</td><td>${fmtUSD(v.totalUSD)}</td><td>${fmtBs(v.totalBs)}</td><td>${v.vendedorNombre||'-'}</td><td>${cancelada ? '<span class="badge badge-red">CANCELADA</span>' : '<span class="badge badge-green">OK</span>'}</td><td><button class="btn btn-sm btn-primary" onclick="verFactura('${v.id}')"><i class="fas fa-eye"></i></button>${puede('ventas','eliminar') && !cancelada ? `<button class="btn btn-sm btn-danger" onclick="eliminarVenta('${v.id}')"><i class="fas fa-trash"></i></button>` : ''}</td></tr>`; }).join(''); }
-function buscarProductoVenta(){ const q = document.getElementById('ventaBusca').value.trim().toLowerCase(); const cont = document.getElementById('ventaResultados'); if(!q){ cont.style.display = 'none'; return; } const matches = STATE.productos.filter(p => (p.codigo||'').toLowerCase().includes(q) || (p.nombre||'').toLowerCase().includes(q)).slice(0, 12); if(matches.length === 0){ cont.innerHTML = '<div style="padding:10px;color:#7f8c8d;">Sin resultados</div>'; cont.style.display = 'block'; return; } cont.innerHTML = `<table><thead><tr><th>Código</th><th>Producto</th><th>Stock</th><th>Precio $</th><th></th></tr></thead><tbody>${matches.map(p => `<tr><td><strong>${p.codigo}</strong></td><td>${p.nombre}</td><td>${p.stock||0}</td><td>${fmtUSD(p.precioVentaUSD)}</td><td><button class="btn btn-sm btn-success" onclick="agregarAlCarrito('${p.id}')"><i class="fas fa-plus"></i></button></td></tr>`).join('')}</tbody></table>`; cont.style.display = 'block'; }
+
+function renderUltimasVentas(){ const tb = document.getElementById('tbodyUltimasVentas'); if(!tb) return; const lista = [...STATE.ventas].sort((a,b) => new Date(b.fechaHora) - new Date(a.fechaHora)).slice(0, 20); if(lista.length === 0){ tb.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i>Sin ventas</td></tr>'; return; } tb.innerHTML = lista.map(v => { const cancelada = v.estado === 'cancelada'; return `<tr style="${cancelada ? 'opacity:0.5;' : ''}"><td>${fmtFecha(v.fechaHora)}</td><td><strong>${v.numeroFactura||'-'}</strong></td><td>${v.cliente||'-'}</td><td>${fmtBs(v.totalBs)}</td><td>${fmtUSD(v.totalUSD)}</td><td>${v.vendedorNombre||'-'}</td><td>${cancelada ? '<span class="badge badge-red">CANCELADA</span>' : '<span class="badge badge-green">OK</span>'}</td><td><button class="btn btn-sm btn-primary" onclick="verFactura('${v.id}')"><i class="fas fa-eye"></i></button>${puede('ventas','eliminar') && !cancelada ? `<button class="btn btn-sm btn-danger" onclick="eliminarVenta('${v.id}')"><i class="fas fa-trash"></i></button>` : ''}</td></tr>`; }).join(''); }
+
+function buscarProductoVenta(esEnter = false){ 
+  const q = document.getElementById('ventaBusca').value.trim().toLowerCase(); 
+  const cont = document.getElementById('ventaResultados'); 
+  
+  if(!q){ cont.style.display = 'none'; return; } 
+  
+  const matches = STATE.productos.filter(p => (p.codigo||'').toLowerCase().includes(q) || (p.nombre||'').toLowerCase().includes(q)).slice(0, 12); 
+  
+  if(matches.length === 0){ 
+    cont.innerHTML = '<div style="padding:10px;color:#7f8c8d;text-align:center;">Sin resultados</div>'; 
+    cont.style.display = 'block'; 
+    return; 
+  } 
+  
+  if(esEnter && matches.length === 1){
+    agregarAlCarrito(matches[0].id);
+    return;
+  }
+
+  cont.innerHTML = `<table><thead><tr><th>Código</th><th>Producto</th><th>Stock</th><th>Precio $</th><th></th></tr></thead><tbody>${matches.map(p => `<tr><td><strong>${p.codigo}</strong></td><td>${p.nombre}</td><td>${p.stock||0}</td><td>${fmtUSD(p.precioVentaUSD)}</td><td><button class="btn btn-sm btn-success" onclick="agregarAlCarrito('${p.id}')"><i class="fas fa-plus"></i></button></td></tr>`).join('')}</tbody></table>`; 
+  cont.style.display = 'block'; 
+}
+
 function agregarAlCarrito(id){ const p = getProductoById(id); if(!p) return; const stockDisp = parseFloat(p.stock)||0; if(stockDisp <= 0 && !esAdminPrincipal()){ toast('Sin stock. Solo Admin Principal puede forzar.', 'error'); return; } const existe = carritoVenta.find(it => it.productoId === id); if(existe){ if(existe.cantidad + 1 > stockDisp){ if(esAdminPrincipal()){ if(!confirm('Stock insuficiente. ¿Continuar?')) return; } else { toast('Stock insuficiente', 'warning'); return; } } existe.cantidad++; } else { carritoVenta.push({ productoId: id, codigo: p.codigo, descripcion: p.nombre, precioUnitUSD: parseFloat(p.precioVentaUSD)||0, cantidad: 1, stockDisponible: stockDisp }); } document.getElementById('ventaBusca').value = ''; document.getElementById('ventaResultados').style.display = 'none'; renderCarrito(); }
-function renderCarrito(){ const tb = document.getElementById('tbodyCarrito'); if(carritoVenta.length === 0){ tb.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-shopping-basket"></i>Carrito vacío</td></tr>'; actualizarTotalesVenta(); return; } tb.innerHTML = carritoVenta.map((it, idx) => `<tr><td><strong>${it.codigo}</strong><br><small>${it.descripcion}</small></td><td>${fmtUSD(it.precioUnitUSD)}</td><td><input type="number" class="qty-input" value="${it.cantidad}" min="1" onchange="cambiarCantidad(${idx}, this.value)"></td><td><strong>${fmtUSD(it.cantidad * it.precioUnitUSD)}</strong></td><td><button class="btn btn-sm btn-danger" onclick="quitarDelCarrito(${idx})"><i class="fas fa-times"></i></button></td></tr>`).join(''); actualizarTotalesVenta(); }
+
+function renderCarrito(){ 
+  const tb = document.getElementById('tbodyCarrito'); 
+  if(carritoVenta.length === 0){ 
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;"><i class="fas fa-shopping-basket"></i> No hay productos agregados</td></tr>'; 
+    actualizarTotalesVenta(); 
+    return; 
+  } 
+  tb.innerHTML = carritoVenta.map((it, idx) => `<tr><td><input type="number" class="qty-input" value="${it.cantidad}" min="1" onchange="cambiarCantidad(${idx}, this.value)"></td><td><strong>${it.descripcion}</strong><br><small>${it.codigo}</small></td><td style="text-align:right;">${fmtUSD(it.precioUnitUSD)}</td><td style="text-align:right;"><strong>${fmtUSD(it.cantidad * it.precioUnitUSD)}</strong></td><td style="text-align:center;"><button class="btn btn-sm btn-danger" onclick="quitarDelCarrito(${idx})"><i class="fas fa-times"></i></button></td></tr>`).join(''); 
+  actualizarTotalesVenta(); 
+}
+
 function cambiarCantidad(idx, val){ const c = parseInt(val)||1; const it = carritoVenta[idx]; if(c > it.stockDisponible && !esAdminPrincipal()){ toast('Solo hay ' + it.stockDisponible, 'warning'); it.cantidad = it.stockDisponible; } else if(c < 1){ it.cantidad = 1; } else { it.cantidad = c; } renderCarrito(); }
 function quitarDelCarrito(idx){ carritoVenta.splice(idx, 1); renderCarrito(); }
 function limpiarCarrito(){ carritoVenta = []; ['ventaCliente','vReferencia','ventaRif','ventaDireccion'].forEach(i => { const el = document.getElementById(i); if(el) el.value = ''; }); renderCarrito(); }
-function actualizarTotalesVenta(){ const aplica = document.getElementById('vAplicaIva')?.value !== 'no'; const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica); const tasa = parseFloat(STATE.config.tasaBCV)||0; if(document.getElementById('vSubtotal')){ document.getElementById('vSubtotal').textContent = fmtUSD(subtotal); document.getElementById('vIva').textContent = fmtUSD(iva); document.getElementById('vTotalUSD').textContent = fmtUSD(total); document.getElementById('vTotalBs').textContent = fmtBs(total * tasa); } }
+
+function actualizarTotalesVenta(){ 
+  const aplica = document.getElementById('vAplicaIva')?.value !== 'no'; 
+  const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica); 
+  const tasa = parseFloat(STATE.config.tasaBCV)||0; 
+  if(document.getElementById('vSubtotal')){ 
+    document.getElementById('vSubtotal').textContent = fmtUSD(subtotal); 
+    document.getElementById('vIva').textContent = fmtUSD(iva); 
+    document.getElementById('vTotalUSD').textContent = fmtUSD(total); 
+    document.getElementById('vTotalBs').textContent = fmtBs(total * tasa); 
+  } 
+}
+
 function generarNumeroFactura(){ const serie = STATE.config.serieFactura || '01'; const num = parseInt(STATE.config.numeroFacturaActual)||1; return `${serie}-${String(num).padStart(8,'0')}`; }
 function generarNumeroControl(){ const actual = parseInt(STATE.config.numeroControlActual)||1; const hasta = parseInt(STATE.config.numeroControlHasta)||1000; if(actual > hasta){ toast('¡Rango de control agotado!', 'error'); return null; } return String(actual).padStart(8,'0'); }
-function registrarVenta(){
-  if(carritoVenta.length === 0){ toast('Agrega productos', 'warning'); return; }
-  for(const it of carritoVenta){ const p = getProductoById(it.productoId); if(!p) continue; if((parseFloat(p.stock)||0) < it.cantidad && !esAdminPrincipal()){ toast(`Stock insuficiente: ${it.descripcion}`, 'error'); return; } }
-  const cliente = document.getElementById('ventaCliente').value.trim() || 'Consumidor Final'; const rifCliente = document.getElementById('ventaRif').value.trim() || 'V-00000000'; const direccionCliente = document.getElementById('ventaDireccion').value.trim(); const moneda = document.getElementById('vMoneda').value; const metodo = document.getElementById('vMetodo').value; const referencia = document.getElementById('vReferencia').value.trim(); const aplica = document.getElementById('vAplicaIva').value === 'si';
-  const numeroFactura = generarNumeroFactura(); const numeroControl = generarNumeroControl(); if(!numeroControl) return;
-  const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica); const tasa = parseFloat(STATE.config.tasaBCV)||0; const totalBs = total * tasa;
-  const venta = { id: uid('vta'), fechaHora: hoyISO(), numeroFactura, numeroControl, cliente, rifCliente, direccionCliente, vendedor: STATE.user.usuario, vendedorNombre: STATE.user.nombre, items: [...carritoVenta], subtotalUSD: subtotal, ivaUSD: iva, totalUSD: total, tasaBCV: tasa, totalBs, monedaPago: moneda, metodoPago: metodo, referencia, aplicoIva: aplica, estado: 'ok' };
-  carritoVenta.forEach(it => { const p = getProductoById(it.productoId); if(!p) return; const stockAntes = parseFloat(p.stock)||0; p.stock = stockAntes - it.cantidad; p.updatedAt = hoyISO(); STATE.movimientos.push({ id: uid('mov'), fechaHora: hoyISO(), tipo: 'venta', productoId: p.id, producto: p.nombre, codigo: p.codigo, cantidad: it.cantidad, stockAntes, stockDespues: p.stock, motivo: `Venta a ${cliente} (Fact. ${numeroFactura})`, usuario: STATE.user.usuario, usuarioNombre: STATE.user.nombre, referencia: venta.id }); });
-  STATE.ventas.push(venta); STATE.config.numeroFacturaActual = (parseInt(STATE.config.numeroFacturaActual)||1) + 1; STATE.config.numeroControlActual = (parseInt(STATE.config.numeroControlActual)||1) + 1;
-  registrarAuditoria({ accion:'CREAR_VENTA', modulo:'ventas', documentoId:venta.id, descripcion:`Venta ${numeroFactura} a ${cliente} por ${fmtUSD(total)}`, datosAntes:null, datosDespues:venta }); guardarTodo(); toast(`Venta registrada: ${fmtUSD(total)} / ${fmtBs(totalBs)}`, 'success');
-  setTimeout(() => { if(confirm('¿Deseas imprimir la factura?')){ imprimirFacturaSENIAT(venta.id); } renderSection('ventas'); }, 400);
+
+function registrarVenta(imprimirInmediato = false){
+  if(carritoVenta.length === 0){ toast('Agrega productos a la factura', 'warning'); return; }
+  
+  for(const it of carritoVenta){ 
+    const p = getProductoById(it.productoId); 
+    if(!p) continue; 
+    if((parseFloat(p.stock)||0) < it.cantidad && !esAdminPrincipal()){ 
+      toast(`Stock insuficiente: ${it.descripcion}`, 'error'); 
+      return; 
+    } 
+  }
+  
+  const cliente = document.getElementById('ventaCliente').value.trim() || 'Consumidor Final'; 
+  const rifCliente = document.getElementById('ventaRif').value.trim() || 'V-00000000'; 
+  const direccionCliente = document.getElementById('ventaDireccion').value.trim(); 
+  const moneda = document.getElementById('vMoneda').value; 
+  const metodo = document.getElementById('vMetodo').value; 
+  const referencia = document.getElementById('vReferencia').value.trim(); 
+  const aplica = document.getElementById('vAplicaIva').value === 'si';
+  const numeroFactura = generarNumeroFactura(); 
+  const numeroControl = generarNumeroControl(); 
+  
+  if(!numeroControl) return;
+  
+  const { subtotal, iva, total } = calcularTotales(carritoVenta, aplica); 
+  const tasa = parseFloat(STATE.config.tasaBCV)||0; 
+  const totalBs = total * tasa;
+  
+  const venta = { 
+    id: uid('vta'), fechaHora: hoyISO(), numeroFactura, numeroControl, cliente, rifCliente, direccionCliente, 
+    vendedor: STATE.user.usuario, vendedorNombre: STATE.user.nombre, items: [...carritoVenta], 
+    subtotalUSD: subtotal, ivaUSD: iva, totalUSD: total, tasaBCV: tasa, totalBs, 
+    monedaPago: moneda, metodoPago: metodo, referencia, aplicoIva: aplica, estado: 'ok' 
+  };
+  
+  carritoVenta.forEach(it => { 
+    const p = getProductoById(it.productoId); 
+    if(!p) return; 
+    const stockAntes = parseFloat(p.stock)||0; 
+    p.stock = stockAntes - it.cantidad; 
+    p.updatedAt = hoyISO(); 
+    STATE.movimientos.push({ id: uid('mov'), fechaHora: hoyISO(), tipo: 'venta', productoId: p.id, producto: p.nombre, codigo: p.codigo, cantidad: it.cantidad, stockAntes, stockDespues: p.stock, motivo: `Venta a ${cliente} (Fact. ${numeroFactura})`, usuario: STATE.user.usuario, usuarioNombre: STATE.user.nombre, referencia: venta.id }); 
+  });
+  
+  STATE.ventas.push(venta); 
+  STATE.config.numeroFacturaActual = (parseInt(STATE.config.numeroFacturaActual)||1) + 1; 
+  STATE.config.numeroControlActual = (parseInt(STATE.config.numeroControlActual)||1) + 1;
+  
+  registrarAuditoria({ accion:'CREAR_VENTA', modulo:'ventas', documentoId:venta.id, descripcion:`Venta ${numeroFactura} a ${cliente} por ${fmtUSD(total)}`, datosAntes:null, datosDespues:venta }); 
+  guardarTodo(); 
+  
+  toast(`Venta registrada: ${fmtUSD(total)} / ${fmtBs(totalBs)}`, 'success');
+  
+  if(imprimirInmediato){
+    imprimirFacturaSENIAT(venta.id);
+  }
+  
+  setTimeout(() => { renderSection('ventas'); }, 500);
 }
+
 function imprimirFacturaSENIAT(ventaId){
-  const v = STATE.ventas.find(x => x.id === ventaId); if(!v) return; const c = STATE.config; const { jsPDF } = window.jspdf; const doc = new jsPDF({format: [80, 250], unit: 'mm'}); const W = 80; let y = 6;
-  doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text(c.empresa || 'INVERSIONES JOJ SOLUTION 2025 C.A.', W/2, y, {align:'center'}); y += 4; doc.setFontSize(7); doc.setFont(undefined, 'normal'); doc.text(`RIF: ${c.rif || 'J-509112580'}`, W/2, y, {align:'center'}); y += 3;
-  if(c.direccion){ doc.splitTextToSize(c.direccion, W-6).forEach(l => { doc.text(l, W/2, y, {align:'center'}); y += 3; }); } if(c.telefono){ doc.text(`Tel: ${c.telefono}`, W/2, y, {align:'center'}); y += 3; } y += 2; doc.setLineWidth(0.3); doc.line(3, y, W-3, y); y += 5;
-  doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('FACTURA', W/2, y, {align:'center'}); y += 5; doc.setFontSize(7); doc.setFont(undefined, 'normal'); doc.text(`Factura N°: ${v.numeroFactura}`, 4, y); y += 3.5; doc.text(`N° Control: ${v.numeroControl}`, 4, y); y += 3.5; doc.text(`Fecha: ${fmtFecha(v.fechaHora)}`, 4, y); y += 3.5; doc.text(`Vendedor: ${v.vendedorNombre}`, 4, y); y += 4; doc.line(3, y, W-3, y); y += 4;
-  doc.setFont(undefined, 'bold'); doc.text('CLIENTE:', 4, y); doc.setFont(undefined, 'normal'); y += 3.5; doc.text(`Nombre: ${v.cliente}`, 4, y); y += 3.5; doc.text(`RIF/CI: ${v.rifCliente}`, 4, y); y += 3.5; if(v.direccionCliente){ doc.splitTextToSize(`Dir: ${v.direccionCliente}`, W-8).forEach(l => { doc.text(l, 4, y); y += 3.5; }); } y += 1; doc.line(3, y, W-3, y); y += 4;
-  doc.setFont(undefined, 'bold'); doc.setFontSize(7); doc.text('Cant', 4, y); doc.text('Descripción', 15, y); doc.text('P.Unit', 55, y, {align:'right'}); doc.text('Total', W-4, y, {align:'right'}); y += 3; doc.setFont(undefined, 'normal'); doc.line(3, y, W-3, y); y += 3;
-  v.items.forEach(it => { const cant = it.cantidad; const desc = doc.splitTextToSize(it.descripcion.substring(0,35), 38); const pUnit = parseFloat(it.precioUnitUSD)||0; const sub = cant * pUnit; desc.forEach((l, i) => { if(i === 0) doc.text(String(cant), 4, y); doc.text(l, 15, y); if(i === 0){ doc.text('$' + pUnit.toFixed(2), 55, y, {align:'right'}); doc.text('$' + sub.toFixed(2), W-4, y, {align:'right'}); } y += 3.2; }); y += 1; });
-  doc.line(3, y, W-3, y); y += 4; doc.setFontSize(7); const cx1 = 45; const cx2 = W-4; doc.text('Subtotal USD:', cx1, y); doc.text('$' + parseFloat(v.subtotalUSD).toFixed(2), cx2, y, {align:'right'}); y += 3.5;
-  if(v.aplicoIva){ doc.text(`IVA (${c.iva}%):`, cx1, y); doc.text('$' + parseFloat(v.ivaUSD).toFixed(2), cx2, y, {align:'right'}); y += 3.5; }
-  doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text('TOTAL USD:', cx1, y); doc.text('$' + parseFloat(v.totalUSD).toFixed(2), cx2, y, {align:'right'}); y += 4; doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.text('TOTAL Bs:', cx1, y); doc.text('Bs ' + parseFloat(v.totalBs).toFixed(2), cx2, y, {align:'right'}); y += 4; doc.setFontSize(7); doc.text(`Tasa BCV: ${v.tasaBCV.toFixed(2)} Bs/$`, 4, y); y += 3.5; doc.text(`Método: ${v.metodoPago}`, 4, y); y += 3.5; if(v.referencia){ doc.text(`Ref: ${v.referencia}`, 4, y); y += 3.5; } y += 2; doc.line(3, y, W-3, y); y += 4;
-  doc.setFontSize(6); doc.splitTextToSize('Este documento cumple con la Providencia Administrativa SNAT/2024/000102', W-8).forEach(l => { doc.text(l, W/2, y, {align:'center'}); y += 2.8; }); if(c.imprentaRazonSocial){ doc.text(`Imprenta: ${c.imprentaRazonSocial}`, W/2, y, {align:'center'}); y += 2.8; if(c.imprentaRif){ doc.text(`RIF: ${c.imprentaRif}`, W/2, y, {align:'center'}); y += 2.8; } if(c.imprentaProvidencia){ doc.text(`Providencia: ${c.imprentaProvidencia}`, W/2, y, {align:'center'}); y += 2.8; } if(c.imprentaFechaAsignacion){ doc.text(`Asignado: ${c.imprentaFechaAsignacion}`, W/2, y, {align:'center'}); y += 2.8; } }
-  y += 3; doc.setFontSize(7); doc.text('¡Gracias por su compra!', W/2, y, {align:'center'}); doc.save(`factura-${v.numeroFactura}.pdf`);
+  const v = STATE.ventas.find(x => x.id === ventaId); if(!v) return; const c = STATE.config; 
+  const { jsPDF } = window.jspdf; 
+  
+  const doc = new jsPDF({ format: 'letter', unit: 'mm' }); 
+  const W = doc.internal.pageSize.getWidth(); 
+  let y = 15;
+
+  // --- MEMBRETE ---
+  doc.setFontSize(14); 
+  doc.setFont(undefined, 'bold'); 
+  doc.text(c.empresa || 'INVERSIONES JOJ SOLUTION 2025 C.A.', 14, y); 
+  y += 6; 
+  
+  doc.setFontSize(9); 
+  doc.setFont(undefined, 'normal'); 
+  doc.text(`RIF: ${c.rif || 'J-509112580'}`, 14, y); 
+  y += 5;
+  
+  // Ajuste: Reducimos el ancho a W - 85 para que no choque con el cuadro de la derecha
+  const direccion = "CALLE PRINCIPAL CC EL VALLE NIVEL GALERIAS LOCAL G-20 SECTOR EL VALLE CARACAS DISTRITO CAPITAL ZONA POSTAL 1090";
+  const splitDir = doc.splitTextToSize(`Dirección Fiscal: ${direccion}`, W - 85);
+  doc.text(splitDir, 14, y); 
+  y += (splitDir.length * 4) + 2;
+  
+  if(c.telefono){ 
+    doc.text(`Teléfono: ${c.telefono}`, 14, y); 
+    y += 5; 
+  } 
+
+  // --- CUADRO DE FACTURA (DERECHA) ---
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(W - 70, 10, 60, 25);
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.text('FACTURA', W - 40, 16, {align: 'center'});
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(8);
+  doc.text(`N°: ${v.numeroFactura}`, W - 65, 22);
+  doc.text(`Control: ${v.numeroControl}`, W - 65, 27);
+  doc.text(`Fecha: ${fmtFechaCorta(v.fechaHora)}`, W - 65, 32);
+
+  // --- DATOS DEL CLIENTE ---
+  y = 45;
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.text('Cliente:', 14, y);
+  doc.setFont(undefined, 'normal');
+  doc.text(v.cliente, 35, y);
+  y += 5;
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('RIF/CI:', 14, y);
+  doc.setFont(undefined, 'normal');
+  doc.text(v.rifCliente, 35, y);
+  y += 5;
+  
+  if(v.direccionCliente){
+    doc.setFont(undefined, 'bold');
+    doc.text('Dirección:', 14, y);
+    doc.setFont(undefined, 'normal');
+    const splitCliDir = doc.splitTextToSize(v.direccionCliente, W - 60);
+    doc.text(splitCliDir, 35, y);
+    y += (splitCliDir.length * 4) + 2;
+  }
+
+  doc.setFont(undefined, 'bold');
+  doc.text('Vendedor:', 14, y);
+  doc.setFont(undefined, 'normal');
+  doc.text(v.vendedorNombre, 35, y);
+  y += 5;
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('Método Pago:', 14, y);
+  doc.setFont(undefined, 'normal');
+  doc.text(v.metodoPago, 35, y);
+  
+  // --- TABLA DE PRODUCTOS ---
+  y += 10;
+  
+  doc.setFillColor(240, 240, 240);
+  doc.rect(14, y, W - 28, 7, 'F');
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'bold');
+  doc.text('Cant', 16, y + 5);
+  doc.text('Descripción', 30, y + 5);
+  doc.text('P. Unit (Bs)', W - 70, y + 5, {align: 'right'});
+  doc.text('Total (Bs)', W - 40, y + 5, {align: 'right'});
+  doc.text('Ref. USD', W - 15, y + 5, {align: 'right'}); // Columna de referencia
+  y += 7;
+  
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(8);
+  const tasa = parseFloat(v.tasaBCV) || 1;
+  
+  v.items.forEach(it => {
+    const cant = it.cantidad;
+    const desc = doc.splitTextToSize(it.descripcion, 90); 
+    const pUnitBs = (parseFloat(it.precioUnitUSD) || 0) * tasa;
+    const subBs = cant * pUnitBs;
+    const subUSD = cant * (parseFloat(it.precioUnitUSD) || 0);
+    
+    let rowHeight = Math.max(desc.length * 4, 7);
+    
+    if (y + rowHeight > doc.internal.pageSize.getHeight() - 40) {
+        doc.addPage();
+        y = 20;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14, y, W - 28, 7, 'F');
+        doc.setFont(undefined, 'bold');
+        doc.text('Cant', 16, y + 5);
+        doc.text('Descripción', 30, y + 5);
+        doc.text('P. Unit (Bs)', W - 70, y + 5, {align: 'right'});
+        doc.text('Total (Bs)', W - 40, y + 5, {align: 'right'});
+        doc.text('Ref. USD', W - 15, y + 5, {align: 'right'});
+        y += 7;
+        doc.setFont(undefined, 'normal');
+    }
+    
+    doc.text(String(cant), 16, y + 5);
+    desc.forEach((l, i) => { doc.text(l, 30, y + 5 + (i * 4)); });
+    doc.text('Bs ' + pUnitBs.toFixed(2), W - 70, y + 5, {align: 'right'});
+    doc.text('Bs ' + subBs.toFixed(2), W - 40, y + 5, {align: 'right'});
+    doc.text('$' + subUSD.toFixed(2), W - 15, y + 5, {align: 'right'});
+    
+    y += rowHeight;
+    doc.line(14, y, W - 14, y); 
+  });
+  
+  // --- TOTALES ---
+  y += 10;
+  const boxX = W - 85;
+  doc.setFontSize(9);
+  
+  // Calculamos los subtotales en Bs
+  const totalBs = parseFloat(v.totalBs);
+  const subtotalBs = totalBs / (1 + (v.aplicoIva ? (parseFloat(c.iva)/100) : 0));
+  const ivaBs = totalBs - subtotalBs;
+  
+  doc.text('Subtotal (Bs):', boxX, y);
+  doc.text('Bs ' + subtotalBs.toFixed(2), W - 15, y, {align: 'right'});
+  y += 5;
+  
+  if(v.aplicoIva){
+    doc.text(`IVA (${c.iva}%) (Bs):`, boxX, y);
+    doc.text('Bs ' + ivaBs.toFixed(2), W - 15, y, {align: 'right'});
+    y += 5;
+  }
+  
+  // TOTAL EN BOLÍVARES (Resaltado)
+  y += 2;
+  doc.setFillColor(245, 245, 245);
+  doc.rect(boxX - 5, y - 4, 75, 12, 'F');
+  
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(11);
+  doc.text('TOTAL BS:', boxX, y + 4);
+  doc.text('Bs ' + totalBs.toFixed(2), W - 15, y + 4, {align: 'right'});
+  
+  // REFERENCIA EN DÓLARES
+  y += 10;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.text('Ref. Total USD:', boxX, y);
+  doc.text('$' + parseFloat(v.totalUSD).toFixed(2), W - 15, y, {align: 'right'});
+  y += 5;
+  doc.text('Tasa BCV:', boxX, y);
+  doc.text(tasa.toFixed(2) + ' Bs/$', W - 15, y, {align: 'right'});
+  
+  // --- PIE DE PÁGINA ---
+  y = doc.internal.pageSize.getHeight() - 20;
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'normal');
+  doc.text('Este documento cumple con la Providencia Administrativa SNAT/2024/000102', W/2, y, {align: 'center'});
+  y += 4;
+  doc.text('¡Gracias por su compra!', W/2, y, {align: 'center'});
+
+  doc.save(`factura-${v.numeroFactura}.pdf`);
 }
+
 function verFactura(ventaId){ const v = STATE.ventas.find(x => x.id === ventaId); if(!v) return; document.getElementById('modalProductoTitle').textContent = 'Factura ' + v.numeroFactura; document.getElementById('modalProductoBody').innerHTML = `<div class="info-box"><strong>Factura N°:</strong> ${v.numeroFactura}<br><strong>Control N°:</strong> ${v.numeroControl}<br><strong>Fecha:</strong> ${fmtFecha(v.fechaHora)}<br><strong>Estado:</strong> ${v.estado === 'cancelada' ? '<span class="badge badge-red">CANCELADA</span>' : '<span class="badge badge-green">OK</span>'}</div><div class="info-box"><strong>Cliente:</strong> ${v.cliente}<br><strong>RIF/CI:</strong> ${v.rifCliente}${v.direccionCliente ? '<br><strong>Dirección:</strong> ' + v.direccionCliente : ''}</div><div class="table-wrap" style="max-height:250px;"><table><thead><tr><th>Código</th><th>Producto</th><th>Cant</th><th>P.Unit</th><th>Subtotal</th></tr></thead><tbody>${v.items.map(it => `<tr><td>${it.codigo}</td><td>${it.descripcion}</td><td>${it.cantidad}</td><td>${fmtUSD(it.precioUnitUSD)}</td><td>${fmtUSD(it.cantidad * it.precioUnitUSD)}</td></tr>`).join('')}</tbody></table></div><div style="margin-top:15px;padding:12px;background:#f5f5f7;border-radius:8px;"><div style="display:flex;justify-content:space-between;"><span>Subtotal USD:</span><strong>${fmtUSD(v.subtotalUSD)}</strong></div><div style="display:flex;justify-content:space-between;"><span>IVA:</span><strong>${fmtUSD(v.ivaUSD)}</strong></div><div style="display:flex;justify-content:space-between;font-size:1.15rem;margin-top:8px;padding-top:8px;border-top:2px solid #e85a1a;"><span><strong>TOTAL USD:</strong></span><strong>${fmtUSD(v.totalUSD)}</strong></div><div style="display:flex;justify-content:space-between;color:#2d8a5c;"><span><strong>TOTAL Bs:</strong></span><strong>${fmtBs(v.totalBs)}</strong></div></div><div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;"><button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cerrar</button><button class="btn btn-primary" onclick="imprimirFacturaSENIAT('${v.id}')"><i class="fas fa-print"></i> Imprimir</button></div>`; openModal('modalProducto'); }
 function eliminarVenta(ventaId){ if(!puede('ventas','eliminar')){ toast('Sin permiso', 'error'); return; } const v = STATE.ventas.find(x => x.id === ventaId); if(!v) return; if(v.estado === 'cancelada'){ toast('Ya está cancelada', 'warning'); return; } document.getElementById('modalProductoTitle').textContent = 'Eliminar Venta'; document.getElementById('modalProductoBody').innerHTML = `<div class="danger-box"><strong>Vas a eliminar esta venta:</strong><br><strong>Factura:</strong> ${v.numeroFactura}<br><strong>Cliente:</strong> ${v.cliente}<br><strong>Total:</strong> ${fmtUSD(v.totalUSD)}</div><div class="form-row"><div class="form-group full"><label>Motivo *</label><textarea id="delVentaMotivo" rows="3"></textarea></div></div><div class="form-row"><div class="form-group"><label>Acción sobre stock</label><select id="delVentaStock"><option value="restaurar">Restaurar stock</option><option value="no_restaurar">NO restaurar</option></select></div></div><div id="delVentaMsg" class="login-msg"></div><div class="modal-foot" style="padding:15px 0 0;border-top:1px solid #eaeef2;"><button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button><button class="btn btn-danger" onclick="eliminarVentaConfirmado('${v.id}')"><i class="fas fa-trash"></i> Eliminar</button></div>`; openModal('modalProducto'); }
 function eliminarVentaConfirmado(ventaId){ const v = STATE.ventas.find(x => x.id === ventaId); if(!v) return; const motivo = document.getElementById('delVentaMotivo').value.trim(); const accionStock = document.getElementById('delVentaStock').value; if(!motivo){ document.getElementById('delVentaMsg').className='login-msg error'; document.getElementById('delVentaMsg').textContent='Motivo obligatorio'; return; } if(accionStock === 'restaurar'){ v.items.forEach(it => { const p = getProductoById(it.productoId); if(p){ const stockAntes = parseFloat(p.stock)||0; p.stock = stockAntes + it.cantidad; p.updatedAt = hoyISO(); STATE.movimientos.push({ id: uid('mov'), fechaHora: hoyISO(), tipo: 'ajuste', productoId: p.id, producto: p.nombre, codigo: p.codigo, cantidad: it.cantidad, stockAntes, stockDespues: p.stock, motivo: `Restauración por eliminar venta ${v.numeroFactura}`, usuario: STATE.user.usuario, usuarioNombre: STATE.user.nombre, referencia: v.id }); } }); } const antes = JSON.parse(JSON.stringify(v)); STATE.ventas = STATE.ventas.filter(x => x.id !== ventaId); registrarAuditoria({ accion:'ELIMINAR_VENTA', modulo:'ventas', documentoId:v.id, descripcion:`Venta ${v.numeroFactura} eliminada (${fmtUSD(v.totalUSD)})`, datosAntes:antes, datosDespues:null, motivo }); guardarTodo(); toast('Venta eliminada', 'success'); closeModal('modalProducto'); renderUltimasVentas(); }
