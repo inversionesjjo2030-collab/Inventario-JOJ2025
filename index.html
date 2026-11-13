@@ -1026,7 +1026,7 @@ function imprimirFacturaSENIAT(ventaId){
   doc.text(`Fecha: ${fmtFechaCorta(v.fechaHora)}`, W - 65, 32);
 
   // --- DATOS DEL CLIENTE ---
-  y = 45;
+  // y ya viene con el espacio de la coletilla
   doc.setFontSize(9);
   doc.setFont(undefined, 'bold');
   doc.text('Cliente:', 14, y);
@@ -1071,7 +1071,7 @@ function imprimirFacturaSENIAT(ventaId){
   doc.text('Descripción', 30, y + 5);
   doc.text('P. Unit (Bs)', W - 70, y + 5, {align: 'right'});
   doc.text('Total (Bs)', W - 40, y + 5, {align: 'right'});
-  doc.text('Ref. USD', W - 15, y + 5, {align: 'right'}); // Columna de referencia
+  // Se eliminó la columna de Ref. USD
   y += 7;
   
   doc.setFont(undefined, 'normal');
@@ -1080,10 +1080,10 @@ function imprimirFacturaSENIAT(ventaId){
   
   v.items.forEach(it => {
     const cant = it.cantidad;
-    const desc = doc.splitTextToSize(it.descripcion, 90); 
+    const desc = doc.splitTextToSize(it.descripcion, 100); // Aumentamos un poco el ancho disponible
     const pUnitBs = (parseFloat(it.precioUnitUSD) || 0) * tasa;
     const subBs = cant * pUnitBs;
-    const subUSD = cant * (parseFloat(it.precioUnitUSD) || 0);
+    // const subUSD = cant * (parseFloat(it.precioUnitUSD) || 0); // Ya no se usa
     
     let rowHeight = Math.max(desc.length * 4, 7);
     
@@ -1097,7 +1097,6 @@ function imprimirFacturaSENIAT(ventaId){
         doc.text('Descripción', 30, y + 5);
         doc.text('P. Unit (Bs)', W - 70, y + 5, {align: 'right'});
         doc.text('Total (Bs)', W - 40, y + 5, {align: 'right'});
-        doc.text('Ref. USD', W - 15, y + 5, {align: 'right'});
         y += 7;
         doc.setFont(undefined, 'normal');
     }
@@ -1106,7 +1105,7 @@ function imprimirFacturaSENIAT(ventaId){
     desc.forEach((l, i) => { doc.text(l, 30, y + 5 + (i * 4)); });
     doc.text('Bs ' + pUnitBs.toFixed(2), W - 70, y + 5, {align: 'right'});
     doc.text('Bs ' + subBs.toFixed(2), W - 40, y + 5, {align: 'right'});
-    doc.text('$' + subUSD.toFixed(2), W - 15, y + 5, {align: 'right'});
+    // Se eliminó la impresión de Ref. USD
     
     y += rowHeight;
     doc.line(14, y, W - 14, y); 
@@ -1142,20 +1141,21 @@ function imprimirFacturaSENIAT(ventaId){
   doc.text('TOTAL BS:', boxX, y + 4);
   doc.text('Bs ' + totalBs.toFixed(2), W - 15, y + 4, {align: 'right'});
   
-  // REFERENCIA EN DÓLARES
-  y += 10;
-  doc.setFontSize(8);
-  doc.setFont(undefined, 'normal');
-  doc.text('Ref. Total USD:', boxX, y);
-  doc.text('$' + parseFloat(v.totalUSD).toFixed(2), W - 15, y, {align: 'right'});
-  y += 5;
-  doc.text('Tasa BCV:', boxX, y);
-  doc.text(tasa.toFixed(2) + ' Bs/$', W - 15, y, {align: 'right'});
-  
-  // --- PIE DE PÁGINA ---
-  y = doc.internal.pageSize.getHeight() - 20;
+  // SE ELIMINÓ LA LÍNEA DE "Ref. Total USD"
+
+  // --- PIE DE PÁGINA (COLETILLA LEGAL) ---
+  // Se coloca casi al final de la hoja
+  y = doc.internal.pageSize.getHeight() - 35;
   doc.setFontSize(7);
   doc.setFont(undefined, 'normal');
+  doc.setTextColor(100, 100, 100);
+  const coletilla = "Tasa de cambio: " + (parseFloat(v.tasaBCV)||0).toFixed(2) + " Bs/$. El IGTF calculado cumple con lo establecido en la Providencia Administrativa 00013, en su artículo 6, según Gaceta Oficial N° 42.339, el cual será aplicado sólo a los pagos recibidos en moneda distinta a la de curso legal, criptomonedas o criptoactivos diferentes a los emitidos en el país, sin mediación de Instituciones Financieras.";
+  const splitColetilla = doc.splitTextToSize(coletilla, W - 28);
+  doc.text(splitColetilla, 14, y);
+  
+  y += (splitColetilla.length * 3.5) + 5; // Ajuste de espacio
+  doc.setTextColor(0, 0, 0); // Reset color
+  doc.setFontSize(7);
   doc.text('Este documento cumple con la Providencia Administrativa SNAT/2024/000102', W/2, y, {align: 'center'});
   y += 4;
   doc.text('¡Gracias por su compra!', W/2, y, {align: 'center'});
